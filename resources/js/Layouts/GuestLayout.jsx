@@ -1,18 +1,77 @@
-import ApplicationLogo from '@/Components/ApplicationLogo';
-import { Link } from '@inertiajs/react';
+import { useState } from 'react';
 
-export default function Guest({ children }) {
+export default function GuestLayout({ children }) {
     return (
-        <div className="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gray-100">
-            <div>
-                <Link href="/">
-                    <ApplicationLogo className="w-20 h-20 fill-current text-gray-500" />
-                </Link>
-            </div>
+        <div className="min-h-screen">
+            {/* Inclure les CSS nécessaires */}
+            <link 
+                href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" 
+                rel="stylesheet" 
+            />
+            <link 
+                href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" 
+                rel="stylesheet" 
+            />
+            <link 
+                href="https://cdnjs.cloudflare.com/ajax/libs/dripicons/2.0.0/webfont.css" 
+                rel="stylesheet" 
+            />
+            
+            {/* Styles personnalisés pour correspondre au design */}
+            <style>
+                {`
+                .auth-header-box {
+                    background: #fff !important; /* fond blanc */
+                }
 
-            <div className="w-full sm:max-w-md mt-6 px-6 py-4 bg-white shadow-md overflow-hidden sm:rounded-lg">
-                {children}
-            </div>
+                
+                .thumb-md {
+                    width: 40px;
+                    height: 40px;
+                }
+                
+                .bg-blue-subtle {
+                    background-color: rgba(59, 130, 246, 0.1) !important;
+                }
+                
+                .bg-info-subtle {
+                    background-color: rgba(6, 182, 212, 0.1) !important;
+                }
+                
+                .bg-danger-subtle {
+                    background-color: rgba(239, 68, 68, 0.1) !important;
+                }
+                
+                .text-blue {
+                    color: #3b82f6 !important;
+                }
+                
+                .form-switch-success .form-check-input:checked {
+                    background-color: #10b981;
+                    border-color: #10b981;
+                }
+                
+                .btn-primary {
+                    background-color: #26658C;
+                    border-color: #26658C;
+                }
+                
+                .btn-primary:hover {
+                    background-color: #1e5270;
+                    border-color: #1e5270;
+                }
+
+                .container-xxl {
+                    max-width: 100%;
+                    padding-right: 15px;
+                    padding-left: 15px;
+                    margin-right: auto;
+                    margin-left: auto;
+                }
+                `}
+            </style>
+
+            {children}
         </div>
     );
 }

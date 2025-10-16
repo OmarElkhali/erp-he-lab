@@ -34,7 +34,7 @@ Route::get('/admin/dashboard', function () {
     $user = auth()->user();
 
     return Inertia::render('Admin/Dashboard', [
-        // Passer l'utilisateur au layout
+        
         'auth' => [
             'user' => $user
         ]
@@ -46,7 +46,7 @@ Route::get('/user/dashboard', function () {
     $user = auth()->user();
 
     return Inertia::render('User/Dashboard', [
-        // Passer l'utilisateur au layout
+       
         'auth' => [
             'user' => $user
         ]
