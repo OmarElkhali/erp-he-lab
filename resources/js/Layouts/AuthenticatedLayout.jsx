@@ -2,6 +2,22 @@ import { useState } from 'react';
 import { Link } from '@inertiajs/react';
 import ApplicationLogo from '@/Components/ApplicationLogo';
 import NavLink from '@/Components/NavLink';
+import { 
+  FaTachometerAlt, 
+  FaFileInvoiceDollar, 
+  FaChartLine, 
+  FaFlask, 
+  FaUsers, 
+  FaFileAlt, 
+  FaVial, 
+  FaUserCog, 
+  FaCog, 
+  FaCalendarAlt,
+  FaUser,
+  FaSignOutAlt,
+  FaChevronDown,
+  FaBars
+} from 'react-icons/fa';
 
 export default function AuthenticatedLayout({ user, header, children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -32,35 +48,35 @@ export default function AuthenticatedLayout({ user, header, children }) {
 
   // 🔹 Définition des items du menu
   const getSidebarItems = () => {
-    const base = [{ label: 'Dashboard', href: '/dashboard', icon: '📊' }];
+    const base = [{ label: 'Dashboard', href: '/dashboard', icon: <FaTachometerAlt className="w-5 h-5 text-[#26658C]" /> }];
 
     if (user.role === 'user') {
       return [
         ...base,
-        { label: 'Chiffrage', icon: '💼', subMenu: typesChiffrage },
-        { label: 'Résultats', href: '/resultats', icon: '📈' },
+        { label: 'Chiffrage', icon: <FaFileInvoiceDollar className="w-5 h-5 text-[#26658C]" />, subMenu: typesChiffrage },
+        { label: 'Résultats', href: '/resultats', icon: <FaChartLine className="w-5 h-5 text-[#26658C]" /> },
       ];
     }
 
     if (user.role === 'admin') {
       return [
         ...base,
-        { label: 'Analyses', href: '/analyses', icon: '🔬' },
-        { label: 'Patients', href: '/patients', icon: '👥' },
-        { label: 'Rapports', href: '/reporting', icon: '📋' },
-        { label: 'Échantillons', href: '/samples', icon: '🧪' },
-        { label: 'Utilisateurs', href: '/users', icon: '👨‍💼' },
-        { label: 'Paramètres', href: '/settings', icon: '⚙️' },
+        { label: 'Analyses', href: '/analyses', icon: <FaFlask className="w-5 h-5 text-[#26658C]" /> },
+        { label: 'Patients', href: '/patients', icon: <FaUsers className="w-5 h-5 text-[#26658C]" /> },
+        { label: 'Rapports', href: '/reporting', icon: <FaFileAlt className="w-5 h-5 text-[#26658C]" /> },
+        { label: 'Échantillons', href: '/samples', icon: <FaVial className="w-5 h-5 text-[#26658C]" /> },
+        { label: 'Utilisateurs', href: '/users', icon: <FaUserCog className="w-5 h-5 text-[#26658C]" /> },
+        { label: 'Paramètres', href: '/settings', icon: <FaCog className="w-5 h-5 text-[#26658C]" /> },
       ];
     }
 
     if (user.role === 'technicien') {
       return [
         ...base,
-        { label: 'Analyses', href: '/analyses', icon: '🔬' },
-        { label: 'Échantillons', href: '/samples', icon: '🧪' },
-        { label: 'Rapports', href: '/reporting', icon: '📋' },
-        { label: 'Planning', href: '/planning', icon: '📅' },
+        { label: 'Analyses', href: '/analyses', icon: <FaFlask className="w-5 h-5 text-[#26658C]" /> },
+        { label: 'Échantillons', href: '/samples', icon: <FaVial className="w-5 h-5 text-[#26658C]" /> },
+        { label: 'Rapports', href: '/reporting', icon: <FaFileAlt className="w-5 h-5 text-[#26658C]" /> },
+        { label: 'Planning', href: '/planning', icon: <FaCalendarAlt className="w-5 h-5 text-[#26658C]" /> },
       ];
     }
 
@@ -97,13 +113,7 @@ export default function AuthenticatedLayout({ user, header, children }) {
                 onClick={() => setSidebarOpen(!sidebarOpen)}
                 className="p-2 rounded-md text-gray-600 hover:bg-gray-100 focus:ring-2 focus:ring-blue-500"
               >
-                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  {sidebarOpen ? (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                  ) : (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
-                  )}
-                </svg>
+                <FaBars className="h-6 w-6" />
               </button>
             </div>
           </div>
@@ -127,17 +137,10 @@ export default function AuthenticatedLayout({ user, header, children }) {
                     className="flex justify-between items-center w-full py-3 px-4 rounded-lg text-gray-700 hover:bg-blue-50"
                   >
                     <div className="flex items-center space-x-3">
-                      <span className="text-lg">{item.icon}</span>
+                      <span className="text-[#26658C]">{item.icon}</span>
                       <span className="font-medium text-sm">{item.label}</span>
                     </div>
-                    <svg
-                      className={`w-4 h-4 transition-transform ${chiffrageOpen ? 'rotate-180' : ''}`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
+                    <FaChevronDown className={`w-4 h-4 text-[#26658C] transition-transform ${chiffrageOpen ? 'rotate-180' : ''}`} />
                   </button>
 
                   {chiffrageOpen && (
@@ -182,7 +185,7 @@ export default function AuthenticatedLayout({ user, header, children }) {
                   className="flex items-center space-x-3 py-3 px-4 rounded-lg text-gray-700 hover:bg-blue-50"
                   onClick={() => setSidebarOpen(false)}
                 >
-                  <span className="text-lg">{item.icon}</span>
+                  <span className="text-[#26658C]">{item.icon}</span>
                   <span className="font-medium text-sm">{item.label}</span>
                 </Link>
               )}
@@ -197,7 +200,7 @@ export default function AuthenticatedLayout({ user, header, children }) {
             className="flex items-center space-x-3 py-2 px-3 rounded-lg text-gray-700 hover:bg-blue-50"
             onClick={() => setSidebarOpen(false)}
           >
-            <span className="text-lg">👤</span>
+            <FaUser className="w-5 h-5 text-[#26658C]" />
             <span className="font-medium text-sm">Mon Profil</span>
           </Link>
 
@@ -208,7 +211,7 @@ export default function AuthenticatedLayout({ user, header, children }) {
             className="flex items-center space-x-3 py-2 px-3 rounded-lg text-gray-700 hover:bg-red-50 w-full text-left"
             onClick={() => setSidebarOpen(false)}
           >
-            <span className="text-lg">🚪</span>
+            <FaSignOutAlt className="w-5 h-5 text-[#26658C]" />
             <span className="font-medium text-sm">Déconnexion</span>
           </Link>
 
