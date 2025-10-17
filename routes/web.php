@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ChiffrageController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Foundation\Application;
 use Inertia\Inertia;
@@ -34,7 +35,6 @@ Route::get('/admin/dashboard', function () {
     $user = auth()->user();
 
     return Inertia::render('Admin/Dashboard', [
-        
         'auth' => [
             'user' => $user
         ]
@@ -46,12 +46,19 @@ Route::get('/user/dashboard', function () {
     $user = auth()->user();
 
     return Inertia::render('User/Dashboard', [
-       
         'auth' => [
             'user' => $user
         ]
     ]);
 })->middleware(['auth', 'verified', 'can:isUser'])->name('user.dashboard');
+
+// Route Chiffrage - Nouveau devis
+Route::middleware(['auth', 'verified', 'can:isUser'])
+    ->prefix('chiffrage')
+    ->name('chiffrage.')
+    ->group(function () {
+        Route::get('/nouveau', [ChiffrageController::class, 'nouveau'])->name('nouveau');
+    });
 
 // Profil (Breeze)
 Route::middleware('auth')->group(function () {

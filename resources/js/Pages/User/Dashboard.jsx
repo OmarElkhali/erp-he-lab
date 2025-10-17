@@ -61,7 +61,7 @@ export default function UserDashboard({ auth }) {
             transition={{ delay: 0.8, duration: 0.8 }}
             className="mt-10 italic text-gray-500 text-sm relative z-10"
           >
-            "Un contrôle précis, une confiance durable." ⚗️
+            "Un contrôle précis, une confiance durable." 
           </motion.div>
         </div>
       </div>

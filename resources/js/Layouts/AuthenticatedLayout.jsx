@@ -165,7 +165,7 @@ export default function AuthenticatedLayout({ user, header, children }) {
                               >
                                 Nouveau
                               </Link>
-                              <Link
+                                                            <Link
                                 href={`/chiffrage/modifier?type=${type.value}`}
                                 className="block py-2 px-3 bg-yellow-50 text-yellow-700 text-xs rounded-md hover:bg-yellow-100"
                                 onClick={() => setSidebarOpen(false)}
