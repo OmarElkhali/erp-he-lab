@@ -1,5 +1,5 @@
 <?php
-
+use App\Http\Controllers\EntrepriseController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ChiffrageController;
 use Illuminate\Support\Facades\Route;
@@ -66,6 +66,10 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
+// Recherche d'une entreprise par ICE (pour remplissage auto)
+Route::get('/entreprises/find/{ice}', [EntrepriseController::class, 'findByIce'])
+    ->middleware(['auth', 'verified'])
+    ->name('entreprises.find');
 
 // Auth routes de Breeze
 require __DIR__.'/auth.php';

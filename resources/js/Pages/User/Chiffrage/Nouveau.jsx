@@ -1,6 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm } from '@inertiajs/react';
-import { useState } from 'react';
+import { useState,useEffect } from 'react';
+import axios from "axios";
 
 export default function Nouveau({ auth }) {
   const [currentStep, setCurrentStep] = useState(1);
@@ -9,6 +10,35 @@ export default function Nouveau({ auth }) {
     ville: '', 
     code_site: '' 
   }]);
+  const handleIceChange = async (e) => {
+  const value = e.target.value;
+    setData("ice", value);
+
+    // Rechercher après 3 caractères ou plus
+    if (value.length >= 3) {
+      try {
+        const response = await axios.get(`/entreprises/find/${value}`);
+        const entreprise = response.data;
+
+        // Remplir automatiquement les autres champs
+        setData({
+          ...data,
+          ice: entreprise.ice,
+          nom: entreprise.nom,
+          adresse: entreprise.adresse,
+          contact_nom: entreprise.contact_nom,
+          contact_prenom: entreprise.contact_prenom || "",
+          contact_fonction: entreprise.contact_fonction || "",
+          telephone: entreprise.telephone,
+          email: entreprise.email,
+        });
+      } catch (error) {
+        // Si aucun résultat, on ne change rien
+        console.log("Entreprise non trouvée");
+      }
+    }
+  };
+
   const [postes, setPostes] = useState([{ 
     nom_poste: '', 
     zone_activite: '', 
@@ -178,12 +208,14 @@ export default function Nouveau({ auth }) {
                       ICE <span className="text-red-500">*</span>
                     </label>
                     <input
-                      type="text"
-                      value={data.ice}
-                      onChange={e => setData('ice', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#26658C]"
-                      required
-                    />
+                    type="text"
+                    value={data.ice}
+                    onChange={handleIceChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#26658C]"
+                    placeholder="Saisir ICE entreprise"
+                    required
+                  />
+
                     {errors.ice && <div className="text-red-500 text-sm mt-1">{errors.ice}</div>}
                   </div>
                   

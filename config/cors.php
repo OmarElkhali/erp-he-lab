@@ -27,6 +27,8 @@ return [
 
     'exposed_headers' => [],
 
+    'allowed_origins' => ['http://localhost:3000'],
+    
     'max_age' => 0,
 
     'supports_credentials' => false,
