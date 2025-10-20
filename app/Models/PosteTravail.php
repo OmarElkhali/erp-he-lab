@@ -22,7 +22,7 @@ class PosteTravail extends Model
 
     public function demande()
     {
-        return $this->belongsTo(DemandeClient::class, 'demande_id');
+        return $this->belongsTo(Demande::class, 'demande_id');
     }
 
     public function composants()

@@ -19,7 +19,7 @@ import {
   FaBars
 } from 'react-icons/fa';
 
-export default function AuthenticatedLayout({ user, header, children }) {
+export default function AuthenticatedLayout({ user, header, children,noWrapper = false}) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [chiffrageOpen, setChiffrageOpen] = useState(false);
   const [selectedChiffrage, setSelectedChiffrage] = useState(null);
@@ -243,7 +243,13 @@ export default function AuthenticatedLayout({ user, header, children }) {
             <h1 className="text-2xl font-bold text-[#26658C]">{header}</h1>
           </div>
         )}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">{children}</div>
+         {noWrapper ? (
+        children
+      ) : (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          {children}
+        </div>
+      )}
 
         {/* Footer */}
         <div className="mt-8 text-center text-xs text-gray-500">

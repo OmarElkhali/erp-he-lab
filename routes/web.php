@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ChiffrageController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Foundation\Application;
+use App\Http\Controllers\ComposantController;
 use Inertia\Inertia;
 
 // Page d'accueil
@@ -70,6 +71,9 @@ Route::middleware('auth')->group(function () {
 Route::get('/entreprises/find/{ice}', [EntrepriseController::class, 'findByIce'])
     ->middleware(['auth', 'verified'])
     ->name('entreprises.find');
+// Route API pour récupérer les composants
+Route::get('/api/composants', [ComposantController::class, 'index'])
+    ->middleware(['auth', 'verified']); 
 
 // Auth routes de Breeze
 require __DIR__.'/auth.php';

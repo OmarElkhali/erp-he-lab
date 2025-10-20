@@ -24,6 +24,6 @@ class Site extends Model
 
     public function demandes()
     {
-        return $this->hasMany(DemandeClient::class);
+        return $this->hasMany(Demande::class);
     }
 }
