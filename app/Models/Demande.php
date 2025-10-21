@@ -1,5 +1,5 @@
 <?php
-
+// app/Models/Demande.php
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -10,74 +10,45 @@ class Demande extends Model
     use HasFactory;
 
     protected $fillable = [
-        'numero_affaire',
-        'ice',
-        'nom_entreprise',
-        'adresse',
-        'contact_nom',
-        'contact_prenom',
-        'contact_fonction',
-        'telephone',
-        'email',
-        'date_creation',
-        'statut',
-        'type_chiffrage',
-        'sites',
-        'postes',
-        'montant_total',
-        'devis_genere',
-        'user_id',
-        'admin_id',
-        'date_validation'
+        'code_affaire', 'entreprise_id', 'matrice_id', 'site_id',
+        'date_creation', 'statut', 'contact_nom_demande', 
+        'contact_email_demande', 'contact_tel_demande'
     ];
 
-    protected $casts = [
-        'sites' => 'array',
-        'postes' => 'array',
-        'date_creation' => 'date',
-        'date_validation' => 'datetime',
-        'devis_genere' => 'boolean'
-    ];
-
-    // Relations
-    public function user()
+    protected static function boot()
     {
-        return $this->belongsTo(User::class);
+        parent::boot();
+
+        static::creating(function ($demande) {
+            // Générer le code affaire: HT-date-increment-abreviation
+            $date = now()->format('Ymd');
+            $matrice = Matrice::find($demande->matrice_id);
+            $abreviation = $matrice ? $matrice->abreviation : 'GEN';
+            
+            $lastDemande = Demande::whereDate('created_at', today())->count();
+            $increment = str_pad($lastDemande + 1, 3, '0', STR_PAD_LEFT);
+            
+            $demande->code_affaire = "HT-{$date}-{$increment}-{$abreviation}";
+        });
     }
 
-    public function admin()
+    public function entreprise()
     {
-        return $this->belongsTo(User::class, 'admin_id');
+        return $this->belongsTo(Entreprise::class);
     }
 
-    public function devis()
+    public function matrice()
     {
-        return $this->hasOne(Devis::class);
+        return $this->belongsTo(Matrice::class);
     }
 
-    // Générer un numéro d'affaire
-    public static function generateNumeroAffaire($typeChiffrage)
+    public function site()
     {
-        $prefixes = [
-            'air-ambiant' => 'AA',
-            'rejets-atmospheriques' => 'RA',
-            'amiante' => 'AM',
-            'bruit-ambiant' => 'BA',
-            'bruit-exposition' => 'BE',
-            'co-opacite' => 'CO',
-            'rejets-liquides' => 'RL',
-            'eau-propre' => 'EP',
-            'eclairage' => 'EC',
-            'qualite-air-interieur' => 'QAI',
-            'vibration' => 'VB',
-            'temperature-humidite' => 'TH',
-            'sol' => 'SL'
-        ];
+        return $this->belongsTo(Site::class);
+    }
 
-        $prefix = $prefixes[$typeChiffrage] ?? 'GE';
-        $date = now()->format('Ymd');
-        $count = self::whereDate('created_at', today())->count() + 1;
-
-        return "{$prefix}{$date}v" . str_pad($count, 2, '0', STR_PAD_LEFT);
+    public function postes()
+    {
+        return $this->hasMany(Poste::class);
     }
 }

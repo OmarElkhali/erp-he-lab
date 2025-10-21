@@ -1,7 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from '@inertiajs/react';
-import ApplicationLogo from '@/Components/ApplicationLogo';
-import NavLink from '@/Components/NavLink';
+import axios from 'axios';
 import { 
   FaTachometerAlt, 
   FaFileInvoiceDollar, 
@@ -16,45 +15,54 @@ import {
   FaUser,
   FaSignOutAlt,
   FaChevronDown,
-  FaBars
+  FaBars,
+  FaBell,
+  FaHistory
 } from 'react-icons/fa';
 
-export default function AuthenticatedLayout({ user, header, children,noWrapper = false}) {
+export default function AuthenticatedLayout({ user, header, children, noWrapper = false }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [chiffrageOpen, setChiffrageOpen] = useState(false);
   const [selectedChiffrage, setSelectedChiffrage] = useState(null);
+  const [typesChiffrage, setTypesChiffrage] = useState([]);
 
   if (!user) return <div>Utilisateur non authentifié</div>;
 
   const getUserInitial = () => user?.nom?.charAt(0)?.toUpperCase() || 'U';
   const getFullName = () => `${user?.nom || ''} ${user?.prenom || ''}`.trim() || 'Utilisateur';
 
-  // 🔹 Sous-catégories de Chiffrage
-  const typesChiffrage = [
-    { label: 'Air ambiant', value: 'air-ambiant' },
-    { label: 'Rejets atmosphériques', value: 'rejets-atmospheriques' },
-    { label: 'Amiante', value: 'amiante' },
-    { label: 'Bruit ambiant', value: 'bruit-ambiant' },
-    { label: "Bruit à l'exposition", value: 'bruit-exposition' },
-    { label: 'Co.opacité', value: 'co-opacite' },
-    { label: 'Rejets liquides', value: 'rejets-liquides' },
-    { label: 'Eau propre', value: 'eau-propre' },
-    { label: 'Éclairage', value: 'eclairage' },
-    { label: "Qualité de l'air intérieur", value: 'qualite-air-interieur' },
-    { label: 'Vibration', value: 'vibration' },
-    { label: 'Température et humidité', value: 'temperature-humidite' },
-    { label: 'Sol', value: 'sol' },
-  ];
+  useEffect(() => {
+    // 🔹 Charger les matrices depuis la base
+    axios.get('/api/matrices') // cette route doit renvoyer toutes les matrices { label, value }
+      .then(res => {
+        setTypesChiffrage(res.data); // met les matrices dans l'état
+      })
+      .catch(err => console.error(err));
+  }, []);
 
   // 🔹 Définition des items du menu
   const getSidebarItems = () => {
-    const base = [{ label: 'Dashboard', href: '/dashboard', icon: <FaTachometerAlt className="w-5 h-5 text-[#26658C]" /> }];
+    const base = [
+      { 
+        label: 'Dashboard', 
+        href: '/dashboard', 
+        icon: <FaTachometerAlt className="w-5 h-5 text-[#26658C]" /> 
+      }
+    ];
 
     if (user.role === 'user') {
       return [
         ...base,
-        { label: 'Chiffrage', icon: <FaFileInvoiceDollar className="w-5 h-5 text-[#26658C]" />, subMenu: typesChiffrage },
-        { label: 'Résultats', href: '/resultats', icon: <FaChartLine className="w-5 h-5 text-[#26658C]" /> },
+        { 
+          label: 'Chiffrage', 
+          icon: <FaFileInvoiceDollar className="w-5 h-5 text-[#26658C]" />, 
+          subMenu: typesChiffrage 
+        },
+        { 
+          label: 'Résultats', 
+          href: '/resultats', 
+          icon: <FaChartLine className="w-5 h-5 text-[#26658C]" /> 
+        },
       ];
     }
 
@@ -104,6 +112,16 @@ export default function AuthenticatedLayout({ user, header, children,noWrapper =
 
             {/* Utilisateur + menu */}
             <div className="flex items-center space-x-4">
+              {/* Icône de notifications */}
+              <Link 
+                href="/notifications" 
+                className="relative p-2 text-gray-600 hover:text-[#26658C] transition-colors"
+              >
+                <FaBell className="h-5 w-5" />
+                {/* Badge pour les notifications non lues */}
+                {/* Vous pouvez implémenter un compteur ici */}
+              </Link>
+
               <div className="hidden md:block text-right">
                 <p className="text-sm font-medium text-gray-900">{getFullName()}</p>
                 <p className="text-xs text-gray-500 capitalize">{user.role}</p>
@@ -158,20 +176,30 @@ export default function AuthenticatedLayout({ user, header, children,noWrapper =
 
                           {selectedChiffrage === type.value && (
                             <div className="ml-4 mt-1 space-y-1">
-                              <Link
-                                href={`/chiffrage/nouveau?type=${type.value}`}
-                                className="block py-2 px-3 bg-green-50 text-green-700 text-xs rounded-md hover:bg-green-100"
-                                onClick={() => setSidebarOpen(false)}
-                              >
-                                Nouveau
-                              </Link>
-                                                            <Link
-                                href={`/chiffrage/modifier?type=${type.value}`}
-                                className="block py-2 px-3 bg-yellow-50 text-yellow-700 text-xs rounded-md hover:bg-yellow-100"
-                                onClick={() => setSidebarOpen(false)}
-                              >
-                                Modifier
-                              </Link>
+                                  <Link
+                                    href={route('chiffrage.nouveau', { matrice_id: type.id })}
+                                    className="block py-2 px-3 bg-green-50 text-green-700 text-xs rounded-md hover:bg-green-100 flex items-center space-x-2"
+                                    onClick={() => setSidebarOpen(false)}
+                                  >
+                                    <span>Nouveau</span>
+                                  </Link>
+
+                                <Link
+                                  href={route('chiffrage.historique', { matrice_id: type.id })}
+                                  className="block py-2 px-3 bg-purple-50 text-purple-700 text-xs rounded-md hover:bg-purple-100 flex items-center space-x-2"
+                                  onClick={() => setSidebarOpen(false)}
+                                >
+                                  <FaHistory className="w-3 h-3" />
+                                  <span>Historique</span>
+                                </Link>
+                               {/* <Link
+                                            href={`/chiffrage/modifier?matrice_id=${type.id}`}
+                                            className="block py-2 px-3 bg-yellow-50 text-yellow-700 text-xs rounded-md hover:bg-yellow-100 flex items-center space-x-2"
+                                            onClick={() => setSidebarOpen(false)}
+                                          >
+                                            <span>Modifier</span>
+                                          </Link> */}
+
                             </div>
                           )}
                         </div>
@@ -243,13 +271,13 @@ export default function AuthenticatedLayout({ user, header, children,noWrapper =
             <h1 className="text-2xl font-bold text-[#26658C]">{header}</h1>
           </div>
         )}
-         {noWrapper ? (
-        children
-      ) : (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          {children}
-        </div>
-      )}
+        {noWrapper ? (
+          children
+        ) : (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            {children}
+          </div>
+        )}
 
         {/* Footer */}
         <div className="mt-8 text-center text-xs text-gray-500">

@@ -1,34 +1,27 @@
 <?php
-
+// database/migrations/2024_01_02_create_entreprises_table.php
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
-    /**
-     * Run the migrations.
-     */
-    public function up(): void
+return new class extends Migration {
+    public function up()
     {
         Schema::create('entreprises', function (Blueprint $table) {
-           $table->id();
+            $table->id();
             $table->string('ice')->unique();
             $table->string('nom');
-            $table->string('adresse');
+            $table->text('adresse');
             $table->string('contact_nom');
-            $table->string('contact_prenom')->nullable();
-            $table->string('contact_fonction')->nullable();
+            $table->string('contact_prenom');
+            $table->string('contact_fonction');
             $table->string('telephone');
-            $table->string('email')->unique();
+            $table->string('email');
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
+    public function down()
     {
         Schema::dropIfExists('entreprises');
     }

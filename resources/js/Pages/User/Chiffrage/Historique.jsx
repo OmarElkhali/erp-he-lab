@@ -1,0 +1,185 @@
+// resources/js/Pages/User/Chiffrage/Historique.jsx
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import { Head, Link, router } from '@inertiajs/react';
+import { FaEdit, FaTrash, FaEye, FaDownload, FaFilePdf } from 'react-icons/fa';
+
+export default function Historique({ auth, demandes, matrice }) {
+  const getStatusBadge = (statut) => {
+    const statusConfig = {
+      'en_attente': { color: 'bg-yellow-100 text-yellow-800', label: 'En attente' },
+      'acceptee': { color: 'bg-green-100 text-green-800', label: 'Acceptée' },
+      'refusee': { color: 'bg-red-100 text-red-800', label: 'Refusée' },
+      'en_cours': { color: 'bg-blue-100 text-blue-800', label: 'En cours' },
+      'terminee': { color: 'bg-gray-100 text-gray-800', label: 'Terminée' }
+    };
+    
+    const config = statusConfig[statut] || statusConfig.en_attente;
+    return <span className={`px-2 py-1 rounded-full text-xs font-medium ${config.color}`}>{config.label}</span>;
+  };
+
+  const handleDelete = (demandeId) => {
+    if (confirm('Êtes-vous sûr de vouloir supprimer cette demande ?')) {
+      router.delete(route('demandes.destroy', demandeId));
+    }
+  };
+
+  const handleDownload = (demande) => {
+    // Logique de téléchargement du PDF
+    console.log('Télécharger la demande:', demande.code_affaire);
+    // Vous pouvez implémenter la génération de PDF ici
+  };
+
+  return (
+    <AuthenticatedLayout user={auth.user}>
+      <Head title={`Historique - ${matrice?.label}`} />
+      
+      <div className="mb-6 flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-[#26658C]">Historique des demandes</h1>
+          <p className="text-gray-600">Matrice: {matrice?.label}</p>
+        </div>
+        <Link
+          href={route('demandes.create', { matrice_id: matrice?.id })}
+          className="bg-[#26658C] text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center space-x-2"
+        >
+          <span>+</span>
+          <span>Nouvelle Demande</span>
+        </Link>
+      </div>
+
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        {demandes.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="text-gray-400 text-6xl mb-4">📊</div>
+            <p className="text-gray-500 text-lg mb-2">Aucune demande trouvée pour cette matrice.</p>
+            <Link
+              href={route('demandes.create', { matrice_id: matrice?.id })}
+              className="text-[#26658C] hover:underline font-medium"
+            >
+              Créer votre première demande
+            </Link>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Code Affaire
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Entreprise
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Site
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Date Création
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Contact
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Postes
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Statut
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {demandes.map((demande) => (
+                  <tr key={demande.id} className="hover:bg-gray-50 transition duration-150">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-semibold text-gray-900">{demande.code_affaire}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">{demande.entreprise.nom}</div>
+                      <div className="text-sm text-gray-500">ICE: {demande.entreprise.ice}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{demande.site.nom_site}</div>
+                      <div className="text-sm text-gray-500">{demande.site.ville}</div>
+                      {demande.site.code_site && (
+                        <div className="text-xs text-gray-400">Code: {demande.site.code_site}</div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {new Date(demande.date_creation).toLocaleDateString('fr-FR')}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{demande.contact_nom_demande}</div>
+                      <div className="text-sm text-gray-500">{demande.contact_email_demande}</div>
+                      <div className="text-sm text-gray-500">{demande.contact_tel_demande}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {demande.postes?.length || 0} poste(s)
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {demande.postes?.map(p => p.nom_poste).join(', ')}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {getStatusBadge(demande.statut)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex items-center space-x-3">
+                        {/* Icône Voir - Toujours visible */}
+                        <Link
+                          href={route('demandes.show', demande.id)}
+                          className="text-blue-600 hover:text-blue-900 transition duration-150"
+                          title="Voir les détails"
+                        >
+                          <FaEye className="w-4 h-4" />
+                        </Link>
+
+                        {/* Icône Modifier - seulement si en attente */}
+                        {(demande.statut === 'en_attente' || demande.statut === 'refusee') && (
+                          <Link
+                            href={route('demandes.edit', demande.id)}
+                            className="text-green-600 hover:text-green-900 transition duration-150"
+                            title="Modifier"
+                          >
+                            <FaEdit className="w-4 h-4" />
+                          </Link>
+                        )}
+
+                        {/* Icône Télécharger PDF - seulement si acceptée ou terminée */}
+                        {(demande.statut === 'acceptee' || demande.statut === 'terminee') && (
+                          <button
+                            onClick={() => handleDownload(demande)}
+                            className="text-red-600 hover:text-red-900 transition duration-150"
+                            title="Télécharger PDF"
+                          >
+                            <FaFilePdf className="w-4 h-4" />
+                          </button>
+                        )}
+
+                        {/* Icône Supprimer - seulement si en attente */}
+                        {demande.statut === 'en_attente' && (
+                          <button
+                            onClick={() => handleDelete(demande.id)}
+                            className="text-red-600 hover:text-red-900 transition duration-150"
+                            title="Supprimer"
+                          >
+                            <FaTrash className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+     
+    </AuthenticatedLayout>
+  );
+}

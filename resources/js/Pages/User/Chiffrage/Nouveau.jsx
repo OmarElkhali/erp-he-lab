@@ -1,10 +1,11 @@
+// resources/js/Pages/User/Chiffrage/Nouveau.jsx
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, useForm, usePage, router } from '@inertiajs/react';
 import Select from 'react-select';
-import { useState,useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import axios from "axios";
 
-export default function Nouveau({ auth }) {
+export default function Nouveau({ auth, matrice_id, matrice }) {
   const [currentStep, setCurrentStep] = useState(1);
   const [sites, setSites] = useState([{ 
     nom_site: '', 
@@ -12,8 +13,56 @@ export default function Nouveau({ auth }) {
     code_site: '' 
   }]);
   
+  const [postes, setPostes] = useState([{ 
+    nom_poste: '', 
+    zone_activite: '', 
+    description: '', 
+    personnes_exposees: '', 
+    duree_shift: '',
+    duree_exposition_quotidienne: '',
+    nb_shifts: '',
+    composants: []
+  }]);
+
+  const { data, setData, post, processing, errors, reset } = useForm({
+    // Informations entreprise
+    ice: '',
+    nom: '',
+    adresse: '',
+    contact_nom: '',
+    contact_prenom: '',
+    contact_fonction: '',
+    telephone: '',
+    email: '',
+    
+    // Informations matrice
+    matrice_id: matrice_id || '',
+    
+    // Informations site
+    sites: sites,
+    
+    // Informations demande
+    date_creation: new Date().toISOString().split('T')[0],
+    statut: 'en_attente',
+    contact_nom_demande: '',
+    contact_email_demande: '',
+    contact_tel_demande: '',
+    
+    // Postes
+    postes: postes
+  });
+
+  // Mettre à jour les données quand sites ou postes changent
+  useEffect(() => {
+    setData('sites', sites);
+  }, [sites]);
+
+  useEffect(() => {
+    setData('postes', postes);
+  }, [postes]);
+
   const handleIceChange = async (e) => {
-  const value = e.target.value;
+    const value = e.target.value;
     setData("ice", value);
 
     // Rechercher après 3 caractères ou plus
@@ -41,47 +90,27 @@ export default function Nouveau({ auth }) {
     }
   };
 
-  const [postes, setPostes] = useState([{ 
-    nom_poste: '', 
-    zone_activite: '', 
-    description: '', 
-    personnes_exposees: '', 
-    duree_shift: '',
-    duree_exposition_quotidienne: '',
-    nb_shifts: '',
-    composants: []
-  }]);
-
-  const { data, setData, post, processing, errors } = useForm({
-    // Informations entreprise
-    ice: '',
-    nom: '',
-    adresse: '',
-    contact_nom: '',
-    contact_prenom: '',
-    contact_fonction: '',
-    telephone: '',
-    email: '',
-    
-    // Informations site
-    sites: sites,
-    
-    // Informations demande
-    date_creation: new Date().toISOString().split('T')[0],
-    statut: 'en_attente',
-    contact_nom_demande: '',
-    contact_email_demande: '',
-    contact_tel_demande: '',
-    
-    // Postes
-    postes: postes
-  });
-
-  // Composants disponibles pour l'analyse
-
   const handleSubmit = (e) => {
     e.preventDefault();
-    post(route('demandes.store'));
+    
+    console.log('Données à soumettre:', data);
+    
+    // Validation
+    if (!data.matrice_id || !data.ice || !data.nom || data.sites.length === 0 || data.postes.length === 0) {
+      alert('Veuillez remplir tous les champs obligatoires');
+      return;
+    }
+    
+    post(route('demandes.store'), {
+      onSuccess: () => {
+        console.log('Soumission réussie!');
+        reset();
+      },
+      onError: (errors) => {
+        console.log('Erreurs de soumission:', errors);
+        alert('Erreur lors de la soumission. Vérifiez les données.');
+      }
+    });
   };
 
   // Fonctions pour les sites
@@ -92,15 +121,12 @@ export default function Nouveau({ auth }) {
       code_site: '' 
     }];
     setSites(newSites);
-    setData('sites', newSites);
   };
 
   const removeSite = (index) => {
     if (sites.length > 1) {
-      const newSites = [...sites];
-      newSites.splice(index, 1);
+      const newSites = sites.filter((_, i) => i !== index);
       setSites(newSites);
-      setData('sites', newSites);
     }
   };
 
@@ -108,7 +134,6 @@ export default function Nouveau({ auth }) {
     const newSites = [...sites];
     newSites[index][field] = value;
     setSites(newSites);
-    setData('sites', newSites);
   };
 
   // Fonctions pour les postes
@@ -124,15 +149,12 @@ export default function Nouveau({ auth }) {
       composants: []
     }];
     setPostes(newPostes);
-    setData('postes', newPostes);
   };
 
   const removePoste = (index) => {
     if (postes.length > 1) {
-      const newPostes = [...postes];
-      newPostes.splice(index, 1);
+      const newPostes = postes.filter((_, i) => i !== index);
       setPostes(newPostes);
-      setData('postes', newPostes);
     }
   };
 
@@ -140,9 +162,9 @@ export default function Nouveau({ auth }) {
     const newPostes = [...postes];
     newPostes[index][field] = value;
     setPostes(newPostes);
-    setData('postes', newPostes);
   };
 
+  // Composant pour les composants
   function PosteComposants({ poste, index, toggleComposant }) {
     const [options, setOptions] = useState([]);
     const [search, setSearch] = useState('');
@@ -150,9 +172,15 @@ export default function Nouveau({ auth }) {
     useEffect(() => {
       axios.get('/api/composants', { params: { search } })
         .then(res => {
-          // Tri alphabétique côté frontend 
           const sorted = res.data.sort((a, b) => a.nom.localeCompare(b.nom));
-          setOptions(sorted.map(c => ({ value: c.id, label: `${c.nom} ` })));
+          setOptions(sorted.map(c => ({ 
+            value: c.id, 
+            label: `${c.nom} ${c.cas_number ? `(${c.cas_number})` : ''}`
+          })));
+        })
+        .catch(error => {
+          console.error('Erreur chargement composants:', error);
+          setOptions([]);
         });
     }, [search]);
 
@@ -167,6 +195,11 @@ export default function Nouveau({ auth }) {
         }}
         value={options.filter(o => poste.composants.includes(o.value))}
         placeholder="Sélectionner les composants"
+        noOptionsMessage={({ inputValue }) => 
+          inputValue ? "Aucun composant trouvé" : "Tapez pour rechercher..."
+        }
+        className="react-select-container"
+        classNamePrefix="react-select"
       />
     );
   }
@@ -175,7 +208,6 @@ export default function Nouveau({ auth }) {
     const newPostes = [...postes];
     newPostes[posteIndex].composants = composantIds; 
     setPostes(newPostes);
-    setData('postes', newPostes);
   };
 
   const nextStep = () => {
@@ -190,12 +222,15 @@ export default function Nouveau({ auth }) {
     <AuthenticatedLayout user={auth.user} noWrapper>
       <Head title="Nouvelle Demande d'Analyse" />
       
-        <div className="max-w-2xl mx-auto px-4">
+      <div className="min-vh-100 bg-gray-50">
+        <div className="max-w-4xl mx-auto px-4 py-6">
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-[#26658C]">Nouvelle Demande d'Analyse</h1>
-          <p className="mt-2 text-gray-600">Créez une nouvelle demande d'analyse environnementale</p>
-          </div>
+              <h1 className="text-3xl font-bold text-[#26658C]">Nouvelle Demande d'Analyse</h1>
+              <p className="mt-2 text-gray-600">
+                {matrice ? `Matrice: ${matrice.label}` : 'Créez une nouvelle demande d\'analyse environnementale'}
+              </p>
+            </div>
             
             {/* Indicateur d'étapes */}
             <div className="flex mb-8">
@@ -208,18 +243,23 @@ export default function Nouveau({ auth }) {
               <div className={`flex-1 text-center py-2 ${currentStep >= 3 ? 'bg-[#26658C] text-white' : 'bg-gray-200'}`}>
                 <span className="font-medium text-sm">Postes de travail</span>
               </div>
-              <div className={`flex-1 text-center py-2 ${currentStep >= 4 ? 'bg-[#26658C] text-white' : 'bg-gray-200'}`}>
-                <span className="font-medium text-sm">Récapitulatif</span>
-              </div>
             </div>
             
             <form onSubmit={handleSubmit}>
-              {/* Étape 1: Informations entreprise */}
-             {currentStep === 1 && (
+              {/* ÉTAPE 1 - INFORMATIONS ENTREPRISE */}
+              {currentStep === 1 && (
                 <div className="space-y-6">
                   <h3 className="text-lg font-medium text-[#26658C] text-center">Informations de l'entreprise</h3>
                   
-                  <div className="space-y-4">
+                  {matrice && (
+                    <div className="bg-blue-50 p-3 rounded-md">
+                      <p className="text-sm text-blue-700">
+                        <strong>Matrice sélectionnée:</strong> {matrice.label}
+                      </p>
+                    </div>
+                  )}
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         ICE <span className="text-red-500">*</span>
@@ -250,7 +290,7 @@ export default function Nouveau({ auth }) {
                       {errors.nom && <div className="text-red-500 text-sm mt-1">{errors.nom}</div>}
                     </div>
                     
-                    <div>
+                    <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Adresse <span className="text-red-500">*</span>
                       </label>
@@ -353,8 +393,8 @@ export default function Nouveau({ auth }) {
                 </div>
               )}
               
-              {/* Étape 2: Site d'intervention */}
-             {currentStep === 2 && (
+              {/* ÉTAPE 2 - SITES D'INTERVENTION */}
+              {currentStep === 2 && (
                 <div className="space-y-6">
                   <h3 className="text-lg font-medium text-[#26658C] text-center">Site d'intervention</h3>
                   
@@ -373,17 +413,17 @@ export default function Nouveau({ auth }) {
                         )}
                       </div>
                       
-                      <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Nom du site <span className="text-red-500">*</span>
+                            Nom du responsable de site <span className="text-red-500">*</span>
                           </label>
                           <input
                             type="text"
                             value={site.nom_site}
                             onChange={e => updateSite(index, 'nom_site', e.target.value)}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#26658C]"
-                            placeholder="Saisir nom du site"
+                            placeholder="Saisir nom du responsable de site"
                             required
                           />
                         </div>
@@ -402,7 +442,7 @@ export default function Nouveau({ auth }) {
                           />
                         </div>
                         
-                        <div>
+                        <div className="md:col-span-2">
                           <label className="block text-sm font-medium text-gray-700 mb-2">Code site</label>
                           <input
                             type="text"
@@ -416,7 +456,7 @@ export default function Nouveau({ auth }) {
                     </div>
                   ))}
                   
-                   <div className="flex justify-start pt-4">
+                  <div className="flex justify-start pt-4">
                     <button
                       type="button"
                       onClick={addSite}
@@ -445,8 +485,8 @@ export default function Nouveau({ auth }) {
                 </div>
               )}
               
-              {/* Étape 3: Postes de travail */}
-             {currentStep === 3 && (
+              {/* ÉTAPE 3 - POSTES DE TRAVAIL + SOUMISSION */}
+              {currentStep === 3 && (
                 <div className="space-y-6">
                   <h3 className="text-lg font-medium text-[#26658C] text-center">Postes de travail</h3>
                   
@@ -508,62 +548,64 @@ export default function Nouveau({ auth }) {
                           />
                         </div>
                         
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Personnes exposées <span className="text-red-500">*</span>
-                          </label>
-                          <input
-                            type="number"
-                            value={poste.personnes_exposees}
-                            onChange={e => updatePoste(index, 'personnes_exposees', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#26658C]"
-                            placeholder="Nombre de personnes"
-                            required
-                          />
-                        </div>
-                        
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Durée du shift (heures) <span className="text-red-500">*</span>
-                          </label>
-                          <input
-                            type="number"
-                            step="0.5"
-                            value={poste.duree_shift}
-                            onChange={e => updatePoste(index, 'duree_shift', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#26658C]"
-                            placeholder="Durée en heures"
-                            required
-                          />
-                        </div>
-                        
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Durée exposition quotidienne (heures) <span className="text-red-500">*</span>
-                          </label>
-                          <input
-                            type="number"
-                            step="0.5"
-                            value={poste.duree_exposition_quotidienne}
-                            onChange={e => updatePoste(index, 'duree_exposition_quotidienne', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#26658C]"
-                            placeholder="Durée exposition en heures"
-                            required
-                          />
-                        </div>
-                        
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Nombre de shifts <span className="text-red-500">*</span>
-                          </label>
-                          <input
-                            type="number"
-                            value={poste.nb_shifts}
-                            onChange={e => updatePoste(index, 'nb_shifts', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#26658C]"
-                            placeholder="Nombre de shifts par jour"
-                            required
-                          />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Personnes exposées <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                              type="number"
+                              value={poste.personnes_exposees}
+                              onChange={e => updatePoste(index, 'personnes_exposees', e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#26658C]"
+                              placeholder="Nombre de personnes"
+                              required
+                            />
+                          </div>
+                          
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Durée du shift (heures) <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                              type="number"
+                              step="0.5"
+                              value={poste.duree_shift}
+                              onChange={e => updatePoste(index, 'duree_shift', e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#26658C]"
+                              placeholder="Durée en heures"
+                              required
+                            />
+                          </div>
+                          
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Durée exposition quotidienne (heures) <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                              type="number"
+                              step="0.5"
+                              value={poste.duree_exposition_quotidienne}
+                              onChange={e => updatePoste(index, 'duree_exposition_quotidienne', e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#26658C]"
+                              placeholder="Durée exposition en heures"
+                              required
+                            />
+                          </div>
+                          
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Nombre de shifts <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                              type="number"
+                              value={poste.nb_shifts}
+                              onChange={e => updatePoste(index, 'nb_shifts', e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#26658C]"
+                              placeholder="Nombre de shifts par jour"
+                              required
+                            />
+                          </div>
                         </div>
                       </div>
                       
@@ -577,13 +619,14 @@ export default function Nouveau({ auth }) {
                       </div>
                     </div>
                   ))}
+                  
                   <div className="flex justify-start pt-4">
                     <button
                       type="button"
                       onClick={addPoste}
                       className="px-6 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 transition duration-200"
                     >
-                      +  Ajouter un poste
+                      + Ajouter un poste
                     </button>
                   </div>
                   
@@ -596,65 +639,20 @@ export default function Nouveau({ auth }) {
                       Précédent
                     </button>
                     <button
-                      type="button"
-                      onClick={nextStep}
-                      className="px-6 py-2 bg-[#26658C] text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-[#26658C] transition duration-200"
-                    >
-                      Suivant
-                    </button>
-                  </div>
-                </div>
-              )}
-              
-              {/* Étape 4: Récapitulatif */}
-              {currentStep === 4 && (
-                <div className="space-y-6">
-                  <h3 className="text-lg font-medium text-[#26658C] text-center">Récapitulatif de la demande</h3>
-                  
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h4 className="font-medium mb-2">Informations entreprise</h4>
-                    <p><strong>ICE:</strong> {data.ice}</p>
-                    <p><strong>Nom:</strong> {data.nom}</p>
-                    <p><strong>Adresse:</strong> {data.adresse}</p>
-                    <p><strong>Contact:</strong> {data.contact_prenom} {data.contact_nom}</p>
-                    <p><strong>Fonction:</strong> {data.contact_fonction}</p>
-                    <p><strong>Téléphone:</strong> {data.telephone}</p>
-                    <p><strong>Email:</strong> {data.email}</p>
-                    
-                    <h4 className="font-medium mt-4 mb-2">Sites d'intervention</h4>
-                    {sites.map((site, index) => (
-                      <div key={index} className="mb-3">
-                        <p><strong>Site {index + 1}:</strong> {site.nom_site}</p>
-                        <p><strong>Ville:</strong> {site.ville}</p>
-                        <p><strong>Code site:</strong> {site.code_site}</p>
-                      </div>
-                    ))}
-                    
-                    <h4 className="font-medium mt-4 mb-2">Postes de travail</h4>
-                    {postes.map((poste, index) => (
-                      <div key={index} className="mb-3">
-                        <p><strong>Poste {index + 1}:</strong> {poste.nom_poste}</p>
-                        <p><strong>Zone d'activité:</strong> {poste.zone_activite}</p>
-                        <p><strong>Personnes exposées:</strong> {poste.personnes_exposees}</p>
-                        <p><strong>Composants à analyser:</strong> {poste.composants.join(', ')}</p>
-                      </div>
-                    ))}
-                  </div>
-                  
-                  <div className="flex justify-between pt-4">
-                    <button
-                      type="button"
-                      onClick={prevStep}
-                      className="px-6 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 transition duration-200"
-                    >
-                      Précédent
-                    </button>
-                    <button
                       type="submit"
                       disabled={processing}
-                      className="px-6 py-2 bg-[#26658C] text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-[#26658C] disabled:opacity-50 transition duration-200"
+                      className="px-6 py-2 bg-[#26658C] text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-[#26658C] transition duration-200 flex items-center space-x-2"
                     >
-                      {processing ? 'Envoi en cours...' : 'Soumettre la demande'}
+                      {processing ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          <span>Soumission...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>✅ Soumettre la Demande</span>
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>
@@ -662,7 +660,7 @@ export default function Nouveau({ auth }) {
             </form>
           </div>
         </div>
-     
+      </div>
     </AuthenticatedLayout>
   );
 }
