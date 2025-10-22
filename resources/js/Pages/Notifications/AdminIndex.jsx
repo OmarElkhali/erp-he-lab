@@ -1,4 +1,4 @@
-// resources/js/Pages/Notifications/Index.jsx
+// resources/js/Pages/Notifications/AdminIndex.jsx
 import React, { useState, useEffect } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';

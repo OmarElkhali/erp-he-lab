@@ -2,6 +2,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router } from '@inertiajs/react';
 import { FaEdit, FaTrash, FaEye, FaDownload, FaFilePdf, FaUpload } from 'react-icons/fa';
+import Swal from 'sweetalert2';
 
 export default function Historique({ auth, demandes, matrice }) {
   const getStatusBadge = (statut) => {
@@ -17,22 +18,115 @@ export default function Historique({ auth, demandes, matrice }) {
     return <span className={`px-2 py-1 rounded-full text-xs font-medium ${config.color}`}>{config.label}</span>;
   };
 
-  const handleDelete = (demandeId) => {
-    if (confirm('Êtes-vous sûr de vouloir supprimer cette demande ?')) {
-      router.delete(route('demandes.destroy', demandeId));
+  const handleDelete = async (demandeId, codeAffaire) => {
+    const result = await Swal.fire({
+      title: 'Êtes-vous sûr?',
+      text: `Voulez-vous vraiment supprimer la demande "${codeAffaire}" ?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Oui, supprimer!',
+      cancelButtonText: 'Annuler',
+      background: '#fff',
+      color: '#333'
+    });
+
+    if (result.isConfirmed) {
+      router.delete(route('demandes.destroy', demandeId), {
+        onSuccess: () => {
+          Swal.fire({
+            title: 'Supprimé!',
+            text: 'La demande a été supprimée avec succès.',
+            icon: 'success',
+            confirmButtonColor: '#26658C',
+            background: '#fff',
+            color: '#333'
+          });
+        },
+        onError: () => {
+          Swal.fire({
+            title: 'Erreur!',
+            text: 'Une erreur est survenue lors de la suppression.',
+            icon: 'error',
+            confirmButtonColor: '#d33',
+            background: '#fff',
+            color: '#333'
+          });
+        }
+      });
     }
   };
 
   const handleDownloadDevis = (demande) => {
-    // Logique de téléchargement du devis
-    console.log('Télécharger le devis pour:', demande.code_affaire);
-    // Implémentez la génération de PDF ici
+    Swal.fire({
+      title: 'Téléchargement du devis',
+      text: `Préparation du devis pour "${demande.code_affaire}"...`,
+      icon: 'info',
+      showCancelButton: true,
+      confirmButtonColor: '#26658C',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Télécharger',
+      cancelButtonText: 'Annuler',
+      background: '#fff',
+      color: '#333'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        // Logique de téléchargement du devis
+        console.log('Télécharger le devis pour:', demande.code_affaire);
+        
+        // Simulation du téléchargement
+        Swal.fire({
+          title: 'Téléchargement réussi!',
+          text: 'Le devis a été généré avec succès.',
+          icon: 'success',
+          confirmButtonColor: '#26658C',
+          background: '#fff',
+          color: '#333'
+        });
+      }
+    });
   };
 
   const handleUploadDevis = (demande) => {
-    // Logique d'upload du devis (pour admin)
-    console.log('Uploader le devis pour:', demande.code_affaire);
-    // Implémentez l'upload de fichier ici
+    Swal.fire({
+      title: 'Uploader le devis',
+      html: `
+        <div class="text-left">
+          <p class="mb-4">Uploader le devis pour <strong>${demande.code_affaire}</strong></p>
+          <input type="file" id="devisFile" class="swal2-file" accept=".pdf,.doc,.docx" />
+        </div>
+      `,
+      showCancelButton: true,
+      confirmButtonColor: '#26658C',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Uploader',
+      cancelButtonText: 'Annuler',
+      background: '#fff',
+      color: '#333',
+      preConfirm: () => {
+        const fileInput = Swal.getPopup().querySelector('#devisFile');
+        if (!fileInput.files[0]) {
+          Swal.showValidationMessage('Veuillez sélectionner un fichier');
+          return false;
+        }
+        return fileInput.files[0];
+      }
+    }).then((result) => {
+      if (result.isConfirmed) {
+        // Logique d'upload du devis
+        console.log('Uploader le devis pour:', demande.code_affaire, 'Fichier:', result.value);
+        
+        Swal.fire({
+          title: 'Upload réussi!',
+          text: 'Le devis a été uploadé avec succès.',
+          icon: 'success',
+          confirmButtonColor: '#26658C',
+          background: '#fff',
+          color: '#333'
+        });
+      }
+    });
   };
 
   return (
@@ -44,7 +138,6 @@ export default function Historique({ auth, demandes, matrice }) {
           <h1 className="text-2xl font-bold text-[#26658C]">Historique des demandes</h1>
           <p className="text-gray-600">Matrice: {matrice?.label}</p>
         </div>
-        
       </div>
 
       <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -54,7 +147,7 @@ export default function Historique({ auth, demandes, matrice }) {
             <p className="text-gray-500 text-lg mb-2">Aucune demande trouvée pour cette matrice.</p>
             <Link
               href={route('demandes.create', { matrice_id: matrice?.id })}
-              className="text-[#26658C] hover:underline font-medium"
+              className="text-[#26658C] hover:underline font-medium transition duration-200"
             >
               Créer votre première demande
             </Link>
@@ -127,24 +220,24 @@ export default function Historique({ auth, demandes, matrice }) {
                       {getStatusBadge(demande.statut)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex items-center space-x-3">
+                      <div className="flex items-center space-x-4">
                         {/* Icône Voir - Toujours visible */}
                         <Link
                           href={route('demandes.show', demande.id)}
-                          className="text-[#26658C] hover:text-blue-900 transition duration-150 p-2 rounded-md hover:bg-blue-50"
+                          className="text-[#26658C] hover:text-blue-800 transition duration-150 transform hover:scale-110"
                           title="Voir les détails"
                         >
-                          <FaEye className="w-4 h-4" />
+                          <FaEye className="w-5 h-5" />
                         </Link>
 
                         {/* Icône Modifier - seulement si en attente ou refusée */}
                         {(demande.statut === 'en_attente' || demande.statut === 'refusee') && (
                           <Link
                             href={route('demandes.edit', demande.id)}
-                            className="text-[#26658C] hover:text-blue-900 transition duration-150 p-2 rounded-md hover:bg-blue-50"
+                            className="text-[#26658C] hover:text-green-700 transition duration-150 transform hover:scale-110"
                             title="Modifier"
                           >
-                            <FaEdit className="w-4 h-4" />
+                            <FaEdit className="w-5 h-5" />
                           </Link>
                         )}
 
@@ -152,10 +245,30 @@ export default function Historique({ auth, demandes, matrice }) {
                         {demande.statut === 'acceptee' && (
                           <button
                             onClick={() => handleDownloadDevis(demande)}
-                            className="text-[#26658C] hover:text-blue-900 transition duration-150 p-2 rounded-md hover:bg-blue-50"
+                            className="text-[#26658C] hover:text-purple-700 transition duration-150 transform hover:scale-110"
                             title="Télécharger le devis"
                           >
-                            <FaDownload className="w-4 h-4" />
+                            <FaDownload className="w-5 h-5" />
+                          </button>
+                        )}
+
+                        {/* Icône PDF - seulement si acceptée */}
+                        {demande.statut === 'acceptee' && (
+                          <button
+                            onClick={() => {
+                              // Logique de génération PDF
+                              console.log('Générer PDF pour:', demande.code_affaire);
+                              Swal.fire({
+                                title: 'PDF Généré!',
+                                text: 'Le PDF a été généré avec succès.',
+                                icon: 'success',
+                                confirmButtonColor: '#26658C'
+                              });
+                            }}
+                            className="text-[#26658C] hover:text-red-700 transition duration-150 transform hover:scale-110"
+                            title="Générer le PDF"
+                          >
+                            <FaFilePdf className="w-5 h-5" />
                           </button>
                         )}
 
@@ -163,21 +276,21 @@ export default function Historique({ auth, demandes, matrice }) {
                         {auth.user.role === 'admin' && demande.statut === 'acceptee' && (
                           <button
                             onClick={() => handleUploadDevis(demande)}
-                            className="text-[#26658C] hover:text-blue-900 transition duration-150 p-2 rounded-md hover:bg-blue-50"
+                            className="text-[#26658C] hover:text-orange-700 transition duration-150 transform hover:scale-110"
                             title="Uploader le devis"
                           >
-                            <FaUpload className="w-4 h-4" />
+                            <FaUpload className="w-5 h-5" />
                           </button>
                         )}
 
                         {/* Icône Supprimer - seulement si en attente */}
                         {demande.statut === 'en_attente' && (
                           <button
-                            onClick={() => handleDelete(demande.id)}
-                            className="text-[#26658C] hover:text-blue-900 transition duration-150 p-2 rounded-md hover:bg-blue-50"
+                            onClick={() => handleDelete(demande.id, demande.code_affaire)}
+                            className="text-[#26658C] hover:text-red-700 transition duration-150 transform hover:scale-110"
                             title="Supprimer"
                           >
-                            <FaTrash className="w-4 h-4" />
+                            <FaTrash className="w-5 h-5" />
                           </button>
                         )}
                       </div>

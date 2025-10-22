@@ -236,6 +236,55 @@ class DemandeController extends Controller
         return response()->json(['error' => 'Erreur: ' . $e->getMessage()], 500);
     }
 }
+
+
+public function destroy(Demande $demande)
+{
+    DB::beginTransaction();
+    
+    try {
+        // Vérifier que l'utilisateur peut supprimer cette demande
+        if ($demande->user_id !== auth()->id()) {
+            return back()->withErrors([
+                'error' => 'Vous n\'êtes pas autorisé à supprimer cette demande'
+            ]);
+        }
+
+        // Vérifier que la demande peut être supprimée (seulement si en attente)
+        if ($demande->statut !== 'en_attente') {
+            return back()->withErrors([
+                'error' => 'Seules les demandes en attente peuvent être supprimées'
+            ]);
+        }
+
+        // 1. Supprimer les notifications associées à cette demande pour les admins
+        Notification::where('type', 'nouvelle_demande')
+            ->where('data->demande_id', $demande->id)
+            ->delete();
+
+        // 2. Supprimer les composants associés aux postes (table pivot)
+        foreach ($demande->postes as $poste) {
+            $poste->composants()->detach();
+        }
+
+        // 3. Supprimer les postes
+        $demande->postes()->delete();
+
+        // 4. Supprimer la demande
+        $demande->delete();
+
+        DB::commit();
+
+        return redirect()->back()->with('success', 'Demande supprimée avec succès');
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        
+        return back()->withErrors([
+            'error' => 'Erreur lors de la suppression: ' . $e->getMessage()
+        ]);
+    }
+}
     public function show(Demande $demande)
     {
         $demande->load([
