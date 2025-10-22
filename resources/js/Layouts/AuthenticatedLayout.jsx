@@ -177,11 +177,11 @@ export default function AuthenticatedLayout({ user, header, children, noWrapper 
                           {selectedChiffrage === type.value && (
                             <div className="ml-4 mt-1 space-y-1">
                                   <Link
-                                    href={route('chiffrage.nouveau', { matrice_id: type.id })}
-                                    className="block py-2 px-3 bg-green-50 text-green-700 text-xs rounded-md hover:bg-green-100 flex items-center space-x-2"
-                                    onClick={() => setSidebarOpen(false)}
-                                  >
-                                    <span>Nouveau</span>
+                                                href={route('demandes.create', { matrice_id: type.id })}
+                                                className="block py-2 px-3 bg-green-50 text-green-700 text-xs rounded-md hover:bg-green-100 flex items-center space-x-2"
+                                                onClick={() => setSidebarOpen(false)}
+                                            >
+                                                <span>Nouveau</span>
                                   </Link>
 
                                 <Link

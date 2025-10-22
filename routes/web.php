@@ -49,18 +49,18 @@ Route::get('/user/dashboard', function () {
     ]);
 })->middleware(['auth', 'verified', 'can:isUser'])->name('user.dashboard');
 
-// ✅ ROUTES UNIFIÉES - Supprimer les doublons
+// ✅ ROUTES UNIFIÉES
 Route::middleware(['auth', 'verified'])->group(function () {
     // Routes utilisateur
     Route::middleware(['can:isUser'])->group(function () {
-         // Demandes
+         // Demandes - AJOUTER LA ROUTE MANQUANTE ICI
+        Route::get('/demandes/nouveau', [DemandeController::class, 'create'])->name('demandes.create'); // ✅ AJOUTÉ
+        Route::post('/demandes', [DemandeController::class, 'store'])->name('demandes.store');
+        Route::get('/historique/matrice/{matrice_id}', [DemandeController::class, 'historiqueMatrice'])->name('historique.matrice');
         Route::get('/demandes/{demande}', [DemandeController::class, 'show'])->name('demandes.show');
         Route::get('/demandes/{demande}/edit', [DemandeController::class, 'edit'])->name('demandes.edit');
         Route::put('/demandes/{demande}', [DemandeController::class, 'update'])->name('demandes.update');
         Route::delete('/demandes/{demande}', [DemandeController::class, 'destroy'])->name('demandes.destroy');
-        Route::get('/demandes/nouveau', [DemandeController::class, 'create'])->name('demandes.create');
-        Route::post('/demandes', [DemandeController::class, 'store'])->name('demandes.store');
-        Route::get('/historique/matrice/{matrice_id}', [DemandeController::class, 'historiqueMatrice'])->name('historique.matrice');
         
         // Chiffrage (redirections)
         Route::get('User/Chiffrage/Nouveau', function (Request $request) {
@@ -81,7 +81,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/admin/demandes/{demande}/telecharger', [DemandeController::class, 'telechargerDemande'])->name('admin.demandes.telecharger');
     });
 
-    // ✅ ROUTES POUR LES NOTIFICATIONS - ACCESSIBLES À TOUS LES UTILISATEURS AUTHENTIFIÉS
+    // ✅ ROUTES POUR LES NOTIFICATIONS
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications');
     Route::post('/notifications', [NotificationController::class, 'store']);
     Route::put('/notifications/{notification}', [NotificationController::class, 'update']);
