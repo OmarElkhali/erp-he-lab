@@ -44,13 +44,7 @@ export default function Historique({ auth, demandes, matrice }) {
           <h1 className="text-2xl font-bold text-[#26658C]">Historique des demandes</h1>
           <p className="text-gray-600">Matrice: {matrice?.label}</p>
         </div>
-        <Link
-          href={route('demandes.create', { matrice_id: matrice?.id })}
-          className="bg-[#26658C] text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center space-x-2"
-        >
-          <span>+</span>
-          <span>Nouvelle Demande</span>
-        </Link>
+        
       </div>
 
       <div className="bg-white rounded-lg shadow overflow-hidden">

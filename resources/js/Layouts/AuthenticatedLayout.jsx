@@ -25,11 +25,31 @@ export default function AuthenticatedLayout({ user, header, children, noWrapper 
   const [chiffrageOpen, setChiffrageOpen] = useState(false);
   const [selectedChiffrage, setSelectedChiffrage] = useState(null);
   const [typesChiffrage, setTypesChiffrage] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   if (!user) return <div>Utilisateur non authentifié</div>;
 
   const getUserInitial = () => user?.nom?.charAt(0)?.toUpperCase() || 'U';
   const getFullName = () => `${user?.nom || ''} ${user?.prenom || ''}`.trim() || 'Utilisateur';
+  useEffect(() => {
+        if (user) {
+          fetchUnreadCount();
+          
+          // Polling toutes les 30 secondes pour les nouvelles notifications
+          const interval = setInterval(fetchUnreadCount, 30000);
+          return () => clearInterval(interval);
+        }
+      }, [user]);
+
+      
+        const fetchUnreadCount = async () => {
+          try {
+            const response = await axios.get('/notifications/unread-count');
+            setUnreadCount(response.data.count);
+          } catch (error) {
+            console.error('Erreur chargement notifications:', error);
+          }
+        };
 
   useEffect(() => {
     // 🔹 Charger les matrices depuis la base
@@ -113,14 +133,32 @@ export default function AuthenticatedLayout({ user, header, children, noWrapper 
             {/* Utilisateur + menu */}
             <div className="flex items-center space-x-4">
               {/* Icône de notifications */}
-              <Link 
-                href="/notifications" 
-                className="relative p-2 text-gray-600 hover:text-[#26658C] transition-colors"
-              >
-                <FaBell className="h-5 w-5" />
-                {/* Badge pour les notifications non lues */}
-                {/* Vous pouvez implémenter un compteur ici */}
-              </Link>
+                       
+                {user?.role === 'admin' ? (
+                  <Link 
+                    href="/admin/notifications" 
+                    className="relative p-2 text-gray-600 hover:text-[#26658C] transition-colors"
+                  >
+                    <FaBell className="h-5 w-5" />
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full text-xs w-5 h-5 flex items-center justify-center animate-pulse">
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                      </span>
+                    )}
+                  </Link>
+                ) : (
+                  <Link 
+                    href="/user/notifications" 
+                    className="relative p-2 text-gray-600 hover:text-[#26658C] transition-colors"
+                  >
+                    <FaBell className="h-5 w-5" />
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full text-xs w-5 h-5 flex items-center justify-center animate-pulse">
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                      </span>
+                    )}
+                  </Link>
+                )}
 
               <div className="hidden md:block text-right">
                 <p className="text-sm font-medium text-gray-900">{getFullName()}</p>

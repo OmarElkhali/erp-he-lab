@@ -81,13 +81,24 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/admin/demandes/{demande}/telecharger', [DemandeController::class, 'telechargerDemande'])->name('admin.demandes.telecharger');
     });
 
-    // ✅ ROUTES POUR LES NOTIFICATIONS
+   
+});
+// ✅ ROUTES POUR LES NOTIFICATIONS
+Route::middleware(['auth', 'verified'])->group(function () {
+    // Route principale qui redirige selon le rôle
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications');
+    
+    // Routes spécifiques
+    Route::get('/admin/notifications', [NotificationController::class, 'adminIndex'])->name('admin.notifications');
+    Route::get('/user/notifications', [NotificationController::class, 'userIndex'])->name('user.notifications');
+    
+    // Routes API
     Route::post('/notifications', [NotificationController::class, 'store']);
     Route::put('/notifications/{notification}', [NotificationController::class, 'update']);
     Route::put('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
     Route::get('/notifications/unread-count', [NotificationController::class, 'getUnreadCount']);
     Route::get('/api/user-notifications', [NotificationController::class, 'getUserNotifications']);
+    Route::get('/api/admin-notifications', [NotificationController::class, 'getAdminNotifications']);
 });
 
 // Entreprises

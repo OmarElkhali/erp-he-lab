@@ -10,14 +10,37 @@ use Inertia\Inertia;
 
 class NotificationController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $notifications = Notification::where('user_id', auth()->id())
-            ->with(['user']) // Charger les informations de l'utilisateur
+        $user = auth()->user();
+        $notifications = Notification::where('user_id', $user->id)
+            ->with(['user'])
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return Inertia::render('Notifications/Index', [
+        // Si c'est un admin, rediriger vers la page admin
+        if ($user->role === 'admin') {
+            return Inertia::render('Notifications/AdminIndex', [
+                'notifications' => $notifications,
+                'auth' => ['user' => $user]
+            ]);
+        }
+
+        // Si c'est un user, rediriger vers la page user
+        return Inertia::render('User/Notifications/Index', [
+            'notifications' => $notifications,
+            'auth' => ['user' => $user]
+        ]);
+    }
+    // Méthode spécifique pour les notifications admin
+    public function adminIndex()
+    {
+        $notifications = Notification::where('user_id', auth()->id())
+            ->with(['user'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return Inertia::render('Notifications/AdminIndex', [
             'notifications' => $notifications,
             'auth' => ['user' => auth()->user()]
         ]);
@@ -52,6 +75,18 @@ class NotificationController extends Controller
         return response()->json([
             'message' => 'Notifications envoyées avec succès',
             'notifications' => $notifications
+        ]);
+    }
+     public function userIndex()
+    {
+        $notifications = Notification::where('user_id', auth()->id())
+            ->with(['user'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return Inertia::render('User/Notifications/Index', [
+            'notifications' => $notifications,
+            'auth' => ['user' => auth()->user()]
         ]);
     }
 
@@ -94,10 +129,19 @@ class NotificationController extends Controller
     }
 
     // Nouvelle méthode pour les notifications utilisateur
-    public function getUserNotifications()
+     public function getUserNotifications()
     {
         $notifications = Notification::where('user_id', auth()->id())
             ->whereIn('type', ['demande_acceptee', 'demande_refusee'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json($notifications);
+    }
+    public function getAdminNotifications()
+    {
+        $notifications = Notification::where('user_id', auth()->id())
+            ->where('type', 'nouvelle_demande')
             ->orderBy('created_at', 'desc')
             ->get();
 
