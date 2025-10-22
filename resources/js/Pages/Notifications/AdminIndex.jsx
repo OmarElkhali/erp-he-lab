@@ -4,11 +4,26 @@ import { Head, Link, router } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import axios from 'axios';
 import { FaCheck, FaTimes, FaEye, FaDownload, FaFilePdf, FaBell } from 'react-icons/fa';
+import Swal from 'sweetalert2';
 
 export default function NotificationsIndex({ auth, notifications }) {
   const [localNotifications, setLocalNotifications] = useState(notifications);
 
   const handleAccept = async (notificationId, demandeId) => {
+    const result = await Swal.fire({
+      title: 'Êtes-vous sûr?',
+      text: "Vous allez accepter cette demande!",
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#10B981',
+      cancelButtonColor: '#EF4444',
+      confirmButtonText: 'Oui, accepter!',
+      cancelButtonText: 'Annuler',
+      reverseButtons: true
+    });
+
+    if (!result.isConfirmed) return;
+
     try {
       // Mettre à jour la notification
       await axios.put(`/notifications/${notificationId}`, {
@@ -28,14 +43,39 @@ export default function NotificationsIndex({ auth, notifications }) {
         )
       );
 
-      alert('Demande acceptée avec succès ! Une notification a été envoyée à l\'utilisateur.');
+      await Swal.fire({
+        title: 'Acceptée!',
+        text: 'La demande a été acceptée avec succès. Une notification a été envoyée à l\'utilisateur.',
+        icon: 'success',
+        confirmButtonColor: '#10B981',
+        timer: 3000
+      });
     } catch (error) {
       console.error('Erreur:', error);
-      alert('Erreur lors de l\'acceptation');
+      await Swal.fire({
+        title: 'Erreur!',
+        text: 'Une erreur est survenue lors de l\'acceptation.',
+        icon: 'error',
+        confirmButtonColor: '#EF4444'
+      });
     }
   };
 
   const handleReject = async (notificationId, demandeId) => {
+    const result = await Swal.fire({
+      title: 'Êtes-vous sûr?',
+      text: "Vous allez refuser cette demande!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#EF4444',
+      cancelButtonColor: '#6B7280',
+      confirmButtonText: 'Oui, refuser!',
+      cancelButtonText: 'Annuler',
+      reverseButtons: true
+    });
+
+    if (!result.isConfirmed) return;
+
     try {
       // Mettre à jour la notification
       await axios.put(`/notifications/${notificationId}`, {
@@ -55,10 +95,21 @@ export default function NotificationsIndex({ auth, notifications }) {
         )
       );
 
-      alert('Demande refusée ! Une notification a été envoyée à l\'utilisateur.');
+      await Swal.fire({
+        title: 'Refusée!',
+        text: 'La demande a été refusée. Une notification a été envoyée à l\'utilisateur.',
+        icon: 'success',
+        confirmButtonColor: '#10B981',
+        timer: 3000
+      });
     } catch (error) {
       console.error('Erreur:', error);
-      alert('Erreur lors du refus');
+      await Swal.fire({
+        title: 'Erreur!',
+        text: 'Une erreur est survenue lors du refus.',
+        icon: 'error',
+        confirmButtonColor: '#EF4444'
+      });
     }
   };
 
