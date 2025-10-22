@@ -2,7 +2,6 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router } from '@inertiajs/react';
 import { FaEdit, FaTrash, FaEye, FaDownload, FaFilePdf, FaUpload } from 'react-icons/fa';
-import Swal from 'sweetalert2';
 
 export default function Historique({ auth, demandes, matrice }) {
   const getStatusBadge = (statut) => {
@@ -18,37 +17,11 @@ export default function Historique({ auth, demandes, matrice }) {
     return <span className={`px-2 py-1 rounded-full text-xs font-medium ${config.color}`}>{config.label}</span>;
   };
 
-  const handleDelete = async (demandeId) => {
-  const result = await Swal.fire({
-    title: 'Êtes-vous sûr?',
-    text: "Cette action est irréversible!",
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#d33',
-    cancelButtonColor: '#3085d6',
-    confirmButtonText: 'Oui, supprimer!',
-    cancelButtonText: 'Annuler'
-  });
-
-  if (result.isConfirmed) {
-    router.delete(route('demandes.destroy', demandeId), {
-      onSuccess: () => {
-        Swal.fire(
-          'Supprimé!',
-          'La demande a été supprimée.',
-          'success'
-        );
-      },
-      onError: () => {
-        Swal.fire(
-          'Erreur!',
-          'Une erreur est survenue lors de la suppression.',
-          'error'
-        );
-      }
-    });
-  }
-};
+  const handleDelete = (demandeId) => {
+    if (confirm('Êtes-vous sûr de vouloir supprimer cette demande ?')) {
+      router.delete(route('demandes.destroy', demandeId));
+    }
+  };
 
   const handleDownloadDevis = (demande) => {
     // Logique de téléchargement du devis
