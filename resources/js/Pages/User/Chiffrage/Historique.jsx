@@ -131,7 +131,7 @@ export default function Historique({ auth, demandes, matrice }) {
                         {/* Icône Voir - Toujours visible */}
                         <Link
                           href={route('demandes.show', demande.id)}
-                          className="text-blue-600 hover:text-blue-900 transition duration-150"
+                          className="text-[#26658C] hover:text-blue-900 transition duration-150 p-2 rounded-md hover:bg-blue-50"
                           title="Voir les détails"
                         >
                           <FaEye className="w-4 h-4" />
@@ -141,7 +141,7 @@ export default function Historique({ auth, demandes, matrice }) {
                         {(demande.statut === 'en_attente' || demande.statut === 'refusee') && (
                           <Link
                             href={route('demandes.edit', demande.id)}
-                            className="text-green-600 hover:text-green-900 transition duration-150"
+                            className="text-[#26658C] hover:text-blue-900 transition duration-150 p-2 rounded-md hover:bg-blue-50"
                             title="Modifier"
                           >
                             <FaEdit className="w-4 h-4" />
@@ -152,7 +152,7 @@ export default function Historique({ auth, demandes, matrice }) {
                         {demande.statut === 'acceptee' && (
                           <button
                             onClick={() => handleDownloadDevis(demande)}
-                            className="text-purple-600 hover:text-purple-900 transition duration-150"
+                            className="text-[#26658C] hover:text-blue-900 transition duration-150 p-2 rounded-md hover:bg-blue-50"
                             title="Télécharger le devis"
                           >
                             <FaDownload className="w-4 h-4" />
@@ -163,7 +163,7 @@ export default function Historique({ auth, demandes, matrice }) {
                         {auth.user.role === 'admin' && demande.statut === 'acceptee' && (
                           <button
                             onClick={() => handleUploadDevis(demande)}
-                            className="text-orange-600 hover:text-orange-900 transition duration-150"
+                            className="text-[#26658C] hover:text-blue-900 transition duration-150 p-2 rounded-md hover:bg-blue-50"
                             title="Uploader le devis"
                           >
                             <FaUpload className="w-4 h-4" />
@@ -174,7 +174,7 @@ export default function Historique({ auth, demandes, matrice }) {
                         {demande.statut === 'en_attente' && (
                           <button
                             onClick={() => handleDelete(demande.id)}
-                            className="text-red-600 hover:text-red-900 transition duration-150"
+                            className="text-[#26658C] hover:text-blue-900 transition duration-150 p-2 rounded-md hover:bg-blue-50"
                             title="Supprimer"
                           >
                             <FaTrash className="w-4 h-4" />

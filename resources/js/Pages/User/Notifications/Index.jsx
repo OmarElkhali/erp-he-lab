@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import axios from 'axios';
-import { FaCheck, FaTimes, FaEye, FaDownload, FaBell, FaFilePdf } from 'react-icons/fa';
+import { FaEye, FaDownload, FaFileAlt, FaBell } from 'react-icons/fa';
 
 export default function UserNotificationsIndex({ auth, notifications }) {
   const [localNotifications, setLocalNotifications] = useState(notifications);
@@ -51,20 +51,20 @@ export default function UserNotificationsIndex({ auth, notifications }) {
   const getNotificationIcon = (type) => {
     switch (type) {
       case 'demande_acceptee':
-        return <FaCheck className="w-5 h-5 text-green-500" />;
+        return <FaDownload className="w-5 h-5 text-[#26658C]" />;
       case 'demande_refusee':
-        return <FaTimes className="w-5 h-5 text-red-500" />;
+        return <FaFileAlt className="w-5 h-5 text-[#26658C]" />;
       default:
-        return <FaBell className="w-5 h-5 text-blue-500" />;
+        return <FaBell className="w-5 h-5 text-[#26658C]" />;
     }
   };
 
   const getNotificationTitle = (type) => {
     switch (type) {
       case 'demande_acceptee':
-        return 'Demande Acceptée ✅';
+        return 'Demande Acceptée';
       case 'demande_refusee':
-        return 'Demande Refusée ❌';
+        return 'Demande Refusée';
       default:
         return 'Notification';
     }
@@ -170,7 +170,7 @@ export default function UserNotificationsIndex({ auth, notifications }) {
                     {/* Bouton Voir la demande */}
                     <Link
                       href={route('demandes.show', notification.data.demande_id)}
-                      className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-200 text-sm"
+                      className="flex items-center space-x-2 px-4 py-2 bg-[#26658C] text-white rounded-md hover:bg-blue-700 transition duration-200 text-sm"
                     >
                       <FaEye className="w-3 h-3" />
                       <span>Voir la demande</span>
@@ -180,7 +180,7 @@ export default function UserNotificationsIndex({ auth, notifications }) {
                     {notification.type === 'demande_acceptee' && (
                       <button
                         onClick={() => handleDownloadDevis(notification.data.demande_id)}
-                        className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition duration-200 text-sm"
+                        className="flex items-center space-x-2 px-4 py-2 bg-[#26658C] text-white rounded-md hover:bg-blue-700 transition duration-200 text-sm"
                       >
                         <FaDownload className="w-3 h-3" />
                         <span>Télécharger devis</span>
@@ -191,9 +191,9 @@ export default function UserNotificationsIndex({ auth, notifications }) {
                     {notification.type === 'demande_refusee' && (
                       <Link
                         href={route('demandes.edit', notification.data.demande_id)}
-                        className="flex items-center space-x-2 px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 transition duration-200 text-sm"
+                        className="flex items-center space-x-2 px-4 py-2 bg-[#26658C] text-white rounded-md hover:bg-blue-700 transition duration-200 text-sm"
                       >
-                        <FaFilePdf className="w-3 h-3" />
+                        <FaFileAlt className="w-3 h-3" />
                         <span>Modifier la demande</span>
                       </Link>
                     )}

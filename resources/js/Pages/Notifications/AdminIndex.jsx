@@ -178,7 +178,7 @@ export default function NotificationsIndex({ auth, notifications }) {
                           {notification.data.code_affaire}
                         </div>
                         {!notification.is_read && (
-                          <FaBell className="w-3 h-3 text-blue-500 animate-pulse" />
+                          <FaBell className="w-3 h-3 text-[#26658C] animate-pulse" />
                         )}
                       </div>
                     </td>
@@ -226,14 +226,14 @@ export default function NotificationsIndex({ auth, notifications }) {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex items-center space-x-3">
-                        {/* Icône Voir */}
+                      <div className="flex items-center space-x-4">
+                        {/* Icône Voir - Toujours visible */}
                         <Link
                           href={route('demandes.show', notification.data.demande_id)}
-                          className="text-blue-600 hover:text-blue-900 transition duration-150"
-                          title="Voir les détails"
+                          className="text-[#26658C] hover:text-blue-800 transition duration-150 transform hover:scale-110"
+                          title="Voir les détails de la demande"
                         >
-                          <FaEye className="w-4 h-4" />
+                          <FaEye className="w-5 h-5" />
                         </Link>
 
                         {/* Actions d'acceptation/refus - seulement si en attente */}
@@ -241,19 +241,47 @@ export default function NotificationsIndex({ auth, notifications }) {
                           <>
                             <button
                               onClick={() => handleAccept(notification.id, notification.data.demande_id)}
-                              className="text-green-600 hover:text-green-900 transition duration-150"
+                              className="text-[#26658C] hover:text-green-700 transition duration-150 transform hover:scale-110"
                               title="Accepter la demande"
                             >
-                              <FaCheck className="w-4 h-4" />
+                              <FaCheck className="w-5 h-5" />
                             </button>
                             <button
                               onClick={() => handleReject(notification.id, notification.data.demande_id)}
-                              className="text-red-600 hover:text-red-900 transition duration-150"
+                              className="text-[#26658C] hover:text-red-700 transition duration-150 transform hover:scale-110"
                               title="Refuser la demande"
                             >
-                              <FaTimes className="w-4 h-4" />
+                              <FaTimes className="w-5 h-5" />
                             </button>
                           </>
+                        )}
+
+                        {/* Icône Télécharger - seulement si acceptée */}
+                        {notification.is_accepted === true && (
+                          <button
+                            onClick={() => {
+                              // Logique de téléchargement du devis
+                              console.log('Télécharger devis pour:', notification.data.code_affaire);
+                            }}
+                            className="text-[#26658C] hover:text-purple-700 transition duration-150 transform hover:scale-110"
+                            title="Télécharger le devis"
+                          >
+                            <FaDownload className="w-5 h-5" />
+                          </button>
+                        )}
+
+                        {/* Icône PDF - seulement si acceptée */}
+                        {notification.is_accepted === true && (
+                          <button
+                            onClick={() => {
+                              // Logique de génération PDF
+                              console.log('Générer PDF pour:', notification.data.code_affaire);
+                            }}
+                            className="text-[#26658C] hover:text-red-700 transition duration-150 transform hover:scale-110"
+                            title="Générer le PDF"
+                          >
+                            <FaFilePdf className="w-5 h-5" />
+                          </button>
                         )}
                       </div>
                     </td>
@@ -264,6 +292,8 @@ export default function NotificationsIndex({ auth, notifications }) {
           </div>
         )}
       </div>
+
+      
     </AuthenticatedLayout>
   );
 }
