@@ -257,4 +257,40 @@ class DemandeController extends Controller
         
         return response()->json(['message' => 'Fonction de téléchargement à implémenter']);
     }
+    public function destroy(Demande $demande)
+        {
+            DB::beginTransaction();
+            
+            try {
+                // Vérifier que l'utilisateur peut supprimer cette demande
+                if ($demande->user_id !== auth()->id()) {
+                    return back()->withErrors(['error' => 'Non autorisé à supprimer cette demande']);
+                }
+
+                // Vérifier que la demande peut être supprimée (seulement si en attente)
+                if ($demande->statut !== 'en_attente') {
+                    return back()->withErrors(['error' => 'Seules les demandes en attente peuvent être supprimées']);
+                }
+                 Notification::where('type', 'nouvelle_demande')
+                ->where('data->demande_id', $demande->id)
+                ->delete();
+
+                // Supprimer les relations
+                $demande->postes()->each(function($poste) {
+                    $poste->composants()->detach();
+                    $poste->delete();
+                });
+
+                // Supprimer la demande
+                $demande->delete();
+
+                DB::commit();
+
+                return back()->with('success', 'Demande supprimée avec succès');
+
+            } catch (\Exception $e) {
+                DB::rollBack();
+                return back()->withErrors(['error' => 'Erreur lors de la suppression: ' . $e->getMessage()]);
+            }
+        }
 }
