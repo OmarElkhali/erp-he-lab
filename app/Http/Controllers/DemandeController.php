@@ -32,111 +32,114 @@ class DemandeController extends Controller
         ]);
     }
 
-    public function store(Request $request)
-    {
-        DB::beginTransaction();
-        
-        try {
-            // 1. Créer ou trouver l'entreprise
-            $entreprise = Entreprise::firstOrCreate(
-                ['ice' => $request->ice],
-                [
-                    'nom' => $request->nom,
-                    'adresse' => $request->adresse,
-                    'contact_nom' => $request->contact_nom,
-                    'contact_prenom' => $request->contact_prenom,
-                    'contact_fonction' => $request->contact_fonction,
-                    'telephone' => $request->telephone,
-                    'email' => $request->email,
-                ]
-            );
 
-            // 2. Créer les sites
-            $siteIds = [];
-            foreach ($request->sites as $siteData) {
-                $site = Site::create([
-                    'entreprise_id' => $entreprise->id,
-                    'nom_site' => $siteData['nom_site'],
-                    'ville' => $siteData['ville'],
-                    'code_site' => $siteData['code_site'] ?? null,
-                ]);
-                $siteIds[] = $site->id;
-            }
+   public function store(Request $request)
+{
+    DB::beginTransaction();
+    
+    try {
+        // 1. Créer ou trouver l'entreprise
+        $entreprise = Entreprise::firstOrCreate(
+            ['ice' => $request->ice],
+            [
+                'nom' => $request->nom,
+                'adresse' => $request->adresse,
+                'contact_nom' => $request->contact_nom,
+                'contact_prenom' => $request->contact_prenom,
+                'contact_fonction' => $request->contact_fonction,
+                'telephone' => $request->telephone,
+                'email' => $request->email,
+            ]
+        );
 
-            // 3. Créer la demande
-            $demande = Demande::create([
+        // 2. Créer les sites
+        $siteIds = [];
+        foreach ($request->sites as $siteData) {
+            $site = Site::create([
                 'entreprise_id' => $entreprise->id,
-                'matrice_id' => $request->matrice_id,
-                'site_id' => $siteIds[0],
-                'date_creation' => now(),
-                'statut' => 'en_attente',
-                'contact_nom_demande' => $request->contact_nom_demande ?? $request->contact_nom,
-                'contact_email_demande' => $request->contact_email_demande ?? $request->email,
-                'contact_tel_demande' => $request->contact_tel_demande ?? $request->telephone,
+                'nom_site' => $siteData['nom_site'],
+                'ville' => $siteData['ville'],
+                'code_site' => $siteData['code_site'] ?? null,
             ]);
+            $siteIds[] = $site->id;
+        }
 
-            // 4. Créer les postes avec leurs composants
-            $postesCount = 0;
-            foreach ($request->postes as $posteData) {
-                $poste = Poste::create([
+        // 3. Créer la demande AVEC user_id
+        $demande = Demande::create([
+            'user_id' => auth()->id(), // ✅ AJOUTER ICI
+            'entreprise_id' => $entreprise->id,
+            'matrice_id' => $request->matrice_id,
+            'site_id' => $siteIds[0],
+            'date_creation' => now(),
+            'statut' => 'en_attente',
+            'contact_nom_demande' => $request->contact_nom_demande ?? $request->contact_nom,
+            'contact_email_demande' => $request->contact_email_demande ?? $request->email,
+            'contact_tel_demande' => $request->contact_tel_demande ?? $request->telephone,
+        ]);
+
+        // 4. Créer les postes avec leurs composants
+        $postesCount = 0;
+        foreach ($request->postes as $posteData) {
+            $poste = Poste::create([
+                'demande_id' => $demande->id,
+                'site_id' => $siteIds[0],
+                'nom_poste' => $posteData['nom_poste'],
+                'zone_activite' => $posteData['zone_activite'],
+                'description' => $posteData['description'],
+                'personnes_exposees' => $posteData['personnes_exposees'],
+                'duree_shift' => $posteData['duree_shift'],
+                'duree_exposition_quotidienne' => $posteData['duree_exposition_quotidienne'],
+                'nb_shifts' => $posteData['nb_shifts'],
+            ]);
+            $postesCount++;
+
+            // Attacher les composants
+            if (!empty($posteData['composants'])) {
+                $poste->composants()->attach($posteData['composants']);
+            }
+        }
+
+        // 5. ENVOYER LA NOTIFICATION À TOUS LES ADMINS
+        $admins = User::where('role', 'admin')->get();
+        $matrice = Matrice::find($request->matrice_id);
+        
+        foreach ($admins as $admin) {
+            Notification::create([
+                'user_id' => $admin->id,
+                'type' => 'nouvelle_demande',
+                'data' => [
                     'demande_id' => $demande->id,
-                    'site_id' => $siteIds[0],
-                    'nom_poste' => $posteData['nom_poste'],
-                    'zone_activite' => $posteData['zone_activite'],
-                    'description' => $posteData['description'],
-                    'personnes_exposees' => $posteData['personnes_exposees'],
-                    'duree_shift' => $posteData['duree_shift'],
-                    'duree_exposition_quotidienne' => $posteData['duree_exposition_quotidienne'],
-                    'nb_shifts' => $posteData['nb_shifts'],
-                ]);
-                $postesCount++;
-
-                // Attacher les composants
-                if (!empty($posteData['composants'])) {
-                    $poste->composants()->attach($posteData['composants']);
-                }
-            }
-
-            // 5. ENVOYER LA NOTIFICATION À TOUS LES ADMINS
-            $admins = User::where('role', 'admin')->get();
-            $matrice = Matrice::find($request->matrice_id);
-            
-            foreach ($admins as $admin) {
-                Notification::create([
-                    'user_id' => $admin->id,
-                    'type' => 'nouvelle_demande',
-                    'data' => [
-                        'demande_id' => $demande->id,
-                        'code_affaire' => $demande->code_affaire,
-                        'entreprise' => $entreprise->nom,
-                        'ice' => $entreprise->ice,
-                        'matrice' => $matrice->label,
-                        'site' => $site->nom_site,
-                        'ville' => $site->ville,
-                        'postes_count' => $postesCount,
-                        'contact_nom' => $demande->contact_nom_demande,
-                        'contact_email' => $demande->contact_email_demande,
-                        'contact_tel' => $demande->contact_tel_demande,
-                        'date_creation' => $demande->date_creation,
-                    ],
-                    'is_read' => false,
-                    'is_accepted' => false
-                ]);
-            }
-
-            DB::commit();
-
-            return redirect()->route('user.dashboard')
-                ->with('success', 'Demande créée avec succès! Code affaire: ' . $demande->code_affaire);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            
-            return back()->withErrors([
-                'error' => 'Erreur lors de la création de la demande: ' . $e->getMessage()
+                    'code_affaire' => $demande->code_affaire,
+                    'entreprise' => $entreprise->nom,
+                    'ice' => $entreprise->ice,
+                    'matrice' => $matrice->label,
+                    'site' => $site->nom_site,
+                    'ville' => $site->ville,
+                    'postes_count' => $postesCount,
+                    'contact_nom' => $demande->contact_nom_demande,
+                    'contact_email' => $demande->contact_email_demande,
+                    'contact_tel' => $demande->contact_tel_demande,
+                    'date_creation' => $demande->date_creation,
+                    'user_id' => auth()->id(), // ID de l'utilisateur qui a créé la demande
+                ],
+                'is_read' => false,
+                'is_accepted' => null
             ]);
         }
+
+        DB::commit();
+
+        return redirect()->route('user.dashboard')
+            ->with('success', 'Demande créée avec succès! Code affaire: ' . $demande->code_affaire);
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        
+        return back()->withErrors([
+            'error' => 'Erreur lors de la création de la demande: ' . $e->getMessage()
+        ]);
     }
+}
 
  public function historiqueMatrice($matrice_id)
         {
@@ -158,19 +161,81 @@ class DemandeController extends Controller
         }
     public function accepterDemande(Demande $demande)
     {
-        $demande->update(['statut' => 'acceptee']);
+        DB::beginTransaction();
         
-        // Ici vous pouvez ajouter la logique d'envoi d'email, notification, etc.
-        
-        return back()->with('success', 'Demande acceptée avec succès');
+        try {
+            // Vérifier que la demande a bien un user_id
+            if (!$demande->user_id) {
+                throw new \Exception('Cette demande n\'a pas d\'utilisateur associé');
+            }
+
+            // Mettre à jour le statut de la demande
+            $demande->update(['statut' => 'acceptee']);
+
+            // Envoyer une notification à l'utilisateur
+            Notification::create([
+                'user_id' => $demande->user_id,
+                'type' => 'demande_acceptee',
+                'data' => [
+                    'demande_id' => $demande->id,
+                    'code_affaire' => $demande->code_affaire,
+                    'entreprise' => $demande->entreprise->nom,
+                    'matrice' => $demande->matrice->label,
+                    'date_acceptation' => now(),
+                    'admin_name' => auth()->user()->nom . ' ' . auth()->user()->prenom,
+                ],
+                'is_read' => false,
+                'is_accepted' => true
+            ]);
+
+            DB::commit();
+
+            return response()->json(['message' => 'Demande acceptée avec succès']);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['error' => 'Erreur: ' . $e->getMessage()], 500);
+        }
     }
 
     public function refuserDemande(Demande $demande)
-    {
+{
+    DB::beginTransaction();
+    
+    try {
+        // Vérifier que la demande a bien un user_id
+        if (!$demande->user_id) {
+            throw new \Exception('Cette demande n\'a pas d\'utilisateur associé');
+        }
+
+        // Mettre à jour le statut de la demande
         $demande->update(['statut' => 'refusee']);
-        
-        return back()->with('success', 'Demande refusée');
+
+        // Envoyer une notification à l'utilisateur
+        Notification::create([
+            'user_id' => $demande->user_id,
+            'type' => 'demande_refusee',
+            'data' => [
+                'demande_id' => $demande->id,
+                'code_affaire' => $demande->code_affaire,
+                'entreprise' => $demande->entreprise->nom,
+                'matrice' => $demande->matrice->label,
+                'date_refus' => now(),
+                'admin_name' => auth()->user()->nom . ' ' . auth()->user()->prenom,
+            ],
+            'is_read' => false,
+            'is_accepted' => false
+        ]);
+
+        DB::commit();
+
+        return response()->json(['message' => 'Demande refusée']);
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return response()->json(['error' => 'Erreur: ' . $e->getMessage()], 500);
     }
+}
     public function show(Demande $demande)
     {
         $demande->load([

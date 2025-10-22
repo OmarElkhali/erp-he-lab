@@ -10,7 +10,7 @@ class Demande extends Model
     use HasFactory;
 
     protected $fillable = [
-        'code_affaire', 'entreprise_id', 'matrice_id', 'site_id',
+        'code_affaire', 'user_id', 'entreprise_id', 'matrice_id', 'site_id',
         'date_creation', 'statut', 'contact_nom_demande', 
         'contact_email_demande', 'contact_tel_demande'
     ];
@@ -20,7 +20,6 @@ class Demande extends Model
         parent::boot();
 
         static::creating(function ($demande) {
-            // Générer le code affaire: HT-date-increment-abreviation
             $date = now()->format('Ymd');
             $matrice = Matrice::find($demande->matrice_id);
             $abreviation = $matrice ? $matrice->abreviation : 'GEN';
@@ -29,7 +28,17 @@ class Demande extends Model
             $increment = str_pad($lastDemande + 1, 3, '0', STR_PAD_LEFT);
             
             $demande->code_affaire = "HT-{$date}-{$increment}-{$abreviation}";
+            
+            // Assigner l'utilisateur connecté si user_id n'est pas déjà défini
+            if (auth()->check() && !$demande->user_id) {
+                $demande->user_id = auth()->id();
+            }
         });
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 
     public function entreprise()

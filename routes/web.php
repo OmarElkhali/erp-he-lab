@@ -87,6 +87,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('/notifications/{notification}', [NotificationController::class, 'update']);
     Route::put('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
     Route::get('/notifications/unread-count', [NotificationController::class, 'getUnreadCount']);
+    Route::get('/api/user-notifications', [NotificationController::class, 'getUserNotifications']);
 });
 
 // Entreprises

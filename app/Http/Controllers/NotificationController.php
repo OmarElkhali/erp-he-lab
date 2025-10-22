@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Notification;
 use App\Models\User;
+use App\Models\Demande;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -12,6 +13,7 @@ class NotificationController extends Controller
     public function index()
     {
         $notifications = Notification::where('user_id', auth()->id())
+            ->with(['user']) // Charger les informations de l'utilisateur
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -28,31 +30,35 @@ class NotificationController extends Controller
             'data' => 'required|array'
         ]);
 
-        // Trouver l'admin
-        $admin = User::where('role', 'admin')->first();
+        // Trouver tous les admins
+        $admins = User::where('role', 'admin')->get();
 
-        if (!$admin) {
+        if ($admins->isEmpty()) {
             return response()->json(['error' => 'Aucun admin trouvé'], 404);
         }
 
-        $notification = Notification::create([
-            'user_id' => $admin->id,
-            'type' => $request->type,
-            'data' => $request->data,
-            'is_read' => false,
-            'is_accepted' => false
-        ]);
+        $notifications = [];
+        foreach ($admins as $admin) {
+            $notification = Notification::create([
+                'user_id' => $admin->id,
+                'type' => $request->type,
+                'data' => $request->data,
+                'is_read' => false,
+                'is_accepted' => null
+            ]);
+            $notifications[] = $notification;
+        }
 
         return response()->json([
-            'message' => 'Notification envoyée avec succès',
-            'notification' => $notification
+            'message' => 'Notifications envoyées avec succès',
+            'notifications' => $notifications
         ]);
     }
 
     public function update(Request $request, Notification $notification)
     {
         $request->validate([
-            'is_accepted' => 'boolean',
+            'is_accepted' => 'nullable|boolean',
             'is_read' => 'boolean'
         ]);
 
@@ -85,5 +91,16 @@ class NotificationController extends Controller
             ->count();
 
         return response()->json(['count' => $count]);
+    }
+
+    // Nouvelle méthode pour les notifications utilisateur
+    public function getUserNotifications()
+    {
+        $notifications = Notification::where('user_id', auth()->id())
+            ->whereIn('type', ['demande_acceptee', 'demande_refusee'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json($notifications);
     }
 }

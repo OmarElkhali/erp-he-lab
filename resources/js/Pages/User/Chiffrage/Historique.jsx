@@ -1,7 +1,7 @@
 // resources/js/Pages/User/Chiffrage/Historique.jsx
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router } from '@inertiajs/react';
-import { FaEdit, FaTrash, FaEye, FaDownload, FaFilePdf } from 'react-icons/fa';
+import { FaEdit, FaTrash, FaEye, FaDownload, FaFilePdf, FaUpload } from 'react-icons/fa';
 
 export default function Historique({ auth, demandes, matrice }) {
   const getStatusBadge = (statut) => {
@@ -23,10 +23,16 @@ export default function Historique({ auth, demandes, matrice }) {
     }
   };
 
-  const handleDownload = (demande) => {
-    // Logique de téléchargement du PDF
-    console.log('Télécharger la demande:', demande.code_affaire);
-    // Vous pouvez implémenter la génération de PDF ici
+  const handleDownloadDevis = (demande) => {
+    // Logique de téléchargement du devis
+    console.log('Télécharger le devis pour:', demande.code_affaire);
+    // Implémentez la génération de PDF ici
+  };
+
+  const handleUploadDevis = (demande) => {
+    // Logique d'upload du devis (pour admin)
+    console.log('Uploader le devis pour:', demande.code_affaire);
+    // Implémentez l'upload de fichier ici
   };
 
   return (
@@ -137,7 +143,7 @@ export default function Historique({ auth, demandes, matrice }) {
                           <FaEye className="w-4 h-4" />
                         </Link>
 
-                        {/* Icône Modifier - seulement si en attente */}
+                        {/* Icône Modifier - seulement si en attente ou refusée */}
                         {(demande.statut === 'en_attente' || demande.statut === 'refusee') && (
                           <Link
                             href={route('demandes.edit', demande.id)}
@@ -148,14 +154,25 @@ export default function Historique({ auth, demandes, matrice }) {
                           </Link>
                         )}
 
-                        {/* Icône Télécharger PDF - seulement si acceptée ou terminée */}
-                        {(demande.statut === 'acceptee' || demande.statut === 'terminee') && (
+                        {/* Icône Télécharger devis - seulement si acceptée */}
+                        {demande.statut === 'acceptee' && (
                           <button
-                            onClick={() => handleDownload(demande)}
-                            className="text-red-600 hover:text-red-900 transition duration-150"
-                            title="Télécharger PDF"
+                            onClick={() => handleDownloadDevis(demande)}
+                            className="text-purple-600 hover:text-purple-900 transition duration-150"
+                            title="Télécharger le devis"
                           >
-                            <FaFilePdf className="w-4 h-4" />
+                            <FaDownload className="w-4 h-4" />
+                          </button>
+                        )}
+
+                        {/* Icône Upload devis - pour admin seulement si acceptée */}
+                        {auth.user.role === 'admin' && demande.statut === 'acceptee' && (
+                          <button
+                            onClick={() => handleUploadDevis(demande)}
+                            className="text-orange-600 hover:text-orange-900 transition duration-150"
+                            title="Uploader le devis"
+                          >
+                            <FaUpload className="w-4 h-4" />
                           </button>
                         )}
 
@@ -178,8 +195,6 @@ export default function Historique({ auth, demandes, matrice }) {
           </div>
         )}
       </div>
-
-     
     </AuthenticatedLayout>
   );
 }
