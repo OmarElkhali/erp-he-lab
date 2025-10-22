@@ -4,6 +4,8 @@ import { Head, useForm, usePage, router } from '@inertiajs/react';
 import Select from 'react-select';
 import { useState, useEffect } from 'react';
 import axios from "axios";
+import Swal from 'sweetalert2';
+import { FaCheck, FaArrowRight, FaArrowLeft, FaPlus, FaPaperPlane } from 'react-icons/fa';
 
 export default function Nouveau({ auth, matrice_id, matrice }) {
   const [currentStep, setCurrentStep] = useState(1);
@@ -97,18 +99,34 @@ export default function Nouveau({ auth, matrice_id, matrice }) {
     
     // Validation
     if (!data.matrice_id || !data.ice || !data.nom || data.sites.length === 0 || data.postes.length === 0) {
-      alert('Veuillez remplir tous les champs obligatoires');
+      Swal.fire({
+        icon: 'error',
+        title: 'Champs manquants',
+        text: 'Veuillez remplir tous les champs obligatoires',
+        confirmButtonColor: '#26658C'
+      });
       return;
     }
     
     post(route('demandes.store'), {
       onSuccess: () => {
-        console.log('Soumission réussie!');
+        Swal.fire({
+          icon: 'success',
+          title: 'Succès!',
+          text: 'Votre demande a été soumise avec succès!',
+          confirmButtonColor: '#26658C',
+          timer: 3000
+        });
         reset();
       },
       onError: (errors) => {
         console.log('Erreurs de soumission:', errors);
-        alert('Erreur lors de la soumission. Vérifiez les données.');
+        Swal.fire({
+          icon: 'error',
+          title: 'Erreur',
+          text: 'Erreur lors de la soumission. Vérifiez les données.',
+          confirmButtonColor: '#26658C'
+        });
       }
     });
   };
@@ -227,20 +245,18 @@ export default function Nouveau({ auth, matrice_id, matrice }) {
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="text-center mb-8">
               <h1 className="text-3xl font-bold text-[#26658C]">Nouvelle Demande d'Analyse</h1>
-              <p className="mt-2 text-gray-600">
-                {matrice ? `Matrice: ${matrice.label}` : 'Créez une nouvelle demande d\'analyse environnementale'}
-              </p>
+              
             </div>
             
             {/* Indicateur d'étapes */}
             <div className="flex mb-8">
-              <div className={`flex-1 text-center py-2 ${currentStep >= 1 ? 'bg-[#26658C] text-white' : 'bg-gray-200'}`}>
+              <div className={`flex-1 text-center py-3 ${currentStep >= 1 ? 'bg-[#26658C] text-white' : 'bg-gray-200'}`}>
                 <span className="font-medium text-sm">Informations entreprise</span>
               </div>
-              <div className={`flex-1 text-center py-2 ${currentStep >= 2 ? 'bg-[#26658C] text-white' : 'bg-gray-200'}`}>
+              <div className={`flex-1 text-center py-3 ${currentStep >= 2 ? 'bg-[#26658C] text-white' : 'bg-gray-200'}`}>
                 <span className="font-medium text-sm">Site d'intervention</span>
               </div>
-              <div className={`flex-1 text-center py-2 ${currentStep >= 3 ? 'bg-[#26658C] text-white' : 'bg-gray-200'}`}>
+              <div className={`flex-1 text-center py-3 ${currentStep >= 3 ? 'bg-[#26658C] text-white' : 'bg-gray-200'}`}>
                 <span className="font-medium text-sm">Postes de travail</span>
               </div>
             </div>
@@ -249,135 +265,150 @@ export default function Nouveau({ auth, matrice_id, matrice }) {
               {/* ÉTAPE 1 - INFORMATIONS ENTREPRISE */}
               {currentStep === 1 && (
                 <div className="space-y-6">
-                  <h3 className="text-lg font-medium text-[#26658C] text-center">Informations de l'entreprise</h3>
+                  <div className="text-center">
+                    <h3 className="text-xl font-semibold text-[#26658C] mb-2">Informations de l'entreprise</h3>
+                    <div className="w-20 h-1 bg-[#26658C] mx-auto rounded"></div>
+                  </div>
                   
                   {matrice && (
-                    <div className="bg-blue-50 p-3 rounded-md">
-                      <p className="text-sm text-blue-700">
-                        <strong>Matrice sélectionnée:</strong> {matrice.label}
+                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                      <p className="text-sm text-blue-700 font-medium">
+                        <span className="font-bold">Matrice sélectionnée:</span> {matrice.label}
                       </p>
                     </div>
                   )}
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        ICE <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={data.ice}
-                        onChange={handleIceChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#26658C]"
-                        placeholder="Saisir ICE entreprise"
-                        required
-                      />
-                      {errors.ice && <div className="text-red-500 text-sm mt-1">{errors.ice}</div>}
-                    </div>
+                  {/* Section Entreprise - Style unifié */}
+                  <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+                    <h4 className="text-lg font-medium text-[#26658C] mb-4 flex items-center">
+                      <FaCheck className="mr-2" />
+                      Informations de l'entreprise
+                    </h4>
                     
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Nom entreprise <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={data.nom}
-                        onChange={e => setData('nom', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#26658C]"
-                        placeholder="Saisir nom entreprise"
-                        required
-                      />
-                      {errors.nom && <div className="text-red-500 text-sm mt-1">{errors.nom}</div>}
-                    </div>
-                    
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Adresse <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={data.adresse}
-                        onChange={e => setData('adresse', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#26658C]"
-                        placeholder="Saisir adresse entreprise"
-                        required
-                      />
-                      {errors.adresse && <div className="text-red-500 text-sm mt-1">{errors.adresse}</div>}
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Contact Nom <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={data.contact_nom}
-                        onChange={e => setData('contact_nom', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#26658C]"
-                        placeholder="Saisir nom contact"
-                        required
-                      />
-                      {errors.contact_nom && <div className="text-red-500 text-sm mt-1">{errors.contact_nom}</div>}
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Contact Prénom <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={data.contact_prenom}
-                        onChange={e => setData('contact_prenom', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#26658C]"
-                        placeholder="Saisir prénom contact"
-                        required
-                      />
-                      {errors.contact_prenom && <div className="text-red-500 text-sm mt-1">{errors.contact_prenom}</div>}
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Fonction <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={data.contact_fonction}
-                        onChange={e => setData('contact_fonction', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#26658C]"
-                        placeholder="Saisir fonction contact"
-                        required
-                      />
-                      {errors.contact_fonction && <div className="text-red-500 text-sm mt-1">{errors.contact_fonction}</div>}
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Téléphone <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="tel"
-                        value={data.telephone}
-                        onChange={e => setData('telephone', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#26658C]"
-                        placeholder="Saisir téléphone"
-                        required
-                      />
-                      {errors.telephone && <div className="text-red-500 text-sm mt-1">{errors.telephone}</div>}
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Email <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="email"
-                        value={data.email}
-                        onChange={e => setData('email', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#26658C]"
-                        placeholder="Saisir email"
-                        required
-                      />
-                      {errors.email && <div className="text-red-500 text-sm mt-1">{errors.email}</div>}
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          ICE <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={data.ice}
+                          onChange={handleIceChange}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
+                          placeholder="Saisir ICE entreprise"
+                          required
+                        />
+                        {errors.ice && <div className="text-red-500 text-sm mt-1">{errors.ice}</div>}
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Nom entreprise <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={data.nom}
+                          onChange={e => setData('nom', e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
+                          placeholder="Saisir nom entreprise"
+                          required
+                        />
+                        {errors.nom && <div className="text-red-500 text-sm mt-1">{errors.nom}</div>}
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Adresse <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={data.adresse}
+                          onChange={e => setData('adresse', e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
+                          placeholder="Saisir adresse entreprise"
+                          required
+                        />
+                        {errors.adresse && <div className="text-red-500 text-sm mt-1">{errors.adresse}</div>}
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Contact Nom <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            value={data.contact_nom}
+                            onChange={e => setData('contact_nom', e.target.value)}
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
+                            placeholder="Saisir nom contact"
+                            required
+                          />
+                          {errors.contact_nom && <div className="text-red-500 text-sm mt-1">{errors.contact_nom}</div>}
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Contact Prénom <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            value={data.contact_prenom}
+                            onChange={e => setData('contact_prenom', e.target.value)}
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
+                            placeholder="Saisir prénom contact"
+                            required
+                          />
+                          {errors.contact_prenom && <div className="text-red-500 text-sm mt-1">{errors.contact_prenom}</div>}
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Fonction <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            value={data.contact_fonction}
+                            onChange={e => setData('contact_fonction', e.target.value)}
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
+                            placeholder="Saisir fonction contact"
+                            required
+                          />
+                          {errors.contact_fonction && <div className="text-red-500 text-sm mt-1">{errors.contact_fonction}</div>}
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Téléphone <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="tel"
+                            value={data.telephone}
+                            onChange={e => setData('telephone', e.target.value)}
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
+                            placeholder="Saisir téléphone"
+                            required
+                          />
+                          {errors.telephone && <div className="text-red-500 text-sm mt-1">{errors.telephone}</div>}
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Email <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="email"
+                          value={data.email}
+                          onChange={e => setData('email', e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
+                          placeholder="Saisir email"
+                          required
+                        />
+                        {errors.email && <div className="text-red-500 text-sm mt-1">{errors.email}</div>}
+                      </div>
                     </div>
                   </div>
                   
@@ -385,9 +416,10 @@ export default function Nouveau({ auth, matrice_id, matrice }) {
                     <button
                       type="button"
                       onClick={nextStep}
-                      className="px-6 py-2 bg-[#26658C] text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-[#26658C] transition duration-200"
+                      className="px-6 py-3 bg-[#26658C] text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-[#26658C] transition duration-200 flex items-center space-x-2 font-medium"
                     >
-                      Suivant
+                      <span>Suivant</span>
+                      <FaArrowRight className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
@@ -396,24 +428,30 @@ export default function Nouveau({ auth, matrice_id, matrice }) {
               {/* ÉTAPE 2 - SITES D'INTERVENTION */}
               {currentStep === 2 && (
                 <div className="space-y-6">
-                  <h3 className="text-lg font-medium text-[#26658C] text-center">Site d'intervention</h3>
+                  <div className="text-center">
+                    <h3 className="text-xl font-semibold text-[#26658C] mb-2">Site d'intervention</h3>
+                    <div className="w-20 h-1 bg-[#26658C] mx-auto rounded"></div>
+                  </div>
                   
                   {sites.map((site, index) => (
-                    <div key={index} className="border border-gray-200 rounded-lg p-4 mb-4">
-                      <div className="flex justify-between items-center mb-4">
-                        <h4 className="font-medium">Site {index + 1}</h4>
+                    <div key={index} className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+                      <div className="flex justify-between items-center mb-6">
+                        <h4 className="text-lg font-medium text-[#26658C] flex items-center">
+                          <FaCheck className="mr-2" />
+                          Site {index + 1}
+                        </h4>
                         {sites.length > 1 && (
                           <button
                             type="button"
                             onClick={() => removeSite(index)}
-                            className="text-red-500 hover:text-red-700 text-sm"
+                            className="text-red-500 hover:text-red-700 text-sm font-medium flex items-center space-x-1"
                           >
-                            Supprimer
+                            <span>Supprimer</span>
                           </button>
                         )}
                       </div>
                       
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-4">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
                             Nom du responsable de site <span className="text-red-500">*</span>
@@ -422,7 +460,7 @@ export default function Nouveau({ auth, matrice_id, matrice }) {
                             type="text"
                             value={site.nom_site}
                             onChange={e => updateSite(index, 'nom_site', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#26658C]"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
                             placeholder="Saisir nom du responsable de site"
                             required
                           />
@@ -436,19 +474,19 @@ export default function Nouveau({ auth, matrice_id, matrice }) {
                             type="text"
                             value={site.ville}
                             onChange={e => updateSite(index, 'ville', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#26658C]"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
                             placeholder="Saisir ville"
                             required
                           />
                         </div>
                         
-                        <div className="md:col-span-2">
+                        <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">Code site</label>
                           <input
                             type="text"
                             value={site.code_site}
                             onChange={e => updateSite(index, 'code_site', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#26658C]"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
                             placeholder="Saisir code site (optionnel)"
                           />
                         </div>
@@ -460,26 +498,29 @@ export default function Nouveau({ auth, matrice_id, matrice }) {
                     <button
                       type="button"
                       onClick={addSite}
-                      className="px-6 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 transition duration-200"
+                      className="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 transition duration-200 flex items-center space-x-2 font-medium"
                     >
-                      + Ajouter un autre site d'intervention
+                      <FaPlus className="w-4 h-4" />
+                      <span>Ajouter un autre site d'intervention</span>
                     </button>
                   </div>
                   
-                  <div className="flex justify-between pt-4">
+                  <div className="flex justify-between pt-6">
                     <button
                       type="button"
                       onClick={prevStep}
-                      className="px-6 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 transition duration-200"
+                      className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 transition duration-200 flex items-center space-x-2 font-medium"
                     >
-                      Précédent
+                      <FaArrowLeft className="w-4 h-4" />
+                      <span>Précédent</span>
                     </button>
                     <button
                       type="button"
                       onClick={nextStep}
-                      className="px-6 py-2 bg-[#26658C] text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-[#26658C] transition duration-200"
+                      className="px-6 py-3 bg-[#26658C] text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-[#26658C] transition duration-200 flex items-center space-x-2 font-medium"
                     >
-                      Suivant
+                      <span>Suivant</span>
+                      <FaArrowRight className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
@@ -488,17 +529,23 @@ export default function Nouveau({ auth, matrice_id, matrice }) {
               {/* ÉTAPE 3 - POSTES DE TRAVAIL + SOUMISSION */}
               {currentStep === 3 && (
                 <div className="space-y-6">
-                  <h3 className="text-lg font-medium text-[#26658C] text-center">Postes de travail</h3>
+                  <div className="text-center">
+                    <h3 className="text-xl font-semibold text-[#26658C] mb-2">Postes de travail</h3>
+                    <div className="w-20 h-1 bg-[#26658C] mx-auto rounded"></div>
+                  </div>
                   
                   {postes.map((poste, index) => (
-                    <div key={index} className="border border-gray-200 rounded-lg p-4 mb-4">
-                      <div className="flex justify-between items-center mb-4">
-                        <h4 className="font-medium">Poste {index + 1}</h4>
+                    <div key={index} className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+                      <div className="flex justify-between items-center mb-6">
+                        <h4 className="text-lg font-medium text-[#26658C] flex items-center">
+                          <FaCheck className="mr-2" />
+                          Poste {index + 1}
+                        </h4>
                         {postes.length > 1 && (
                           <button
                             type="button"
                             onClick={() => removePoste(index)}
-                            className="text-red-500 hover:text-red-700 text-sm"
+                            className="text-red-500 hover:text-red-700 text-sm font-medium"
                           >
                             Supprimer
                           </button>
@@ -514,7 +561,7 @@ export default function Nouveau({ auth, matrice_id, matrice }) {
                             type="text"
                             value={poste.nom_poste}
                             onChange={e => updatePoste(index, 'nom_poste', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#26658C]"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
                             placeholder="Saisir nom du poste"
                             required
                           />
@@ -528,7 +575,7 @@ export default function Nouveau({ auth, matrice_id, matrice }) {
                             type="text"
                             value={poste.zone_activite}
                             onChange={e => updatePoste(index, 'zone_activite', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#26658C]"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
                             placeholder="Saisir zone d'activité"
                             required
                           />
@@ -541,7 +588,7 @@ export default function Nouveau({ auth, matrice_id, matrice }) {
                           <textarea
                             value={poste.description}
                             onChange={e => updatePoste(index, 'description', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#26658C]"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
                             rows="3"
                             placeholder="Décrire les opérations réalisées"
                             required
@@ -557,7 +604,7 @@ export default function Nouveau({ auth, matrice_id, matrice }) {
                               type="number"
                               value={poste.personnes_exposees}
                               onChange={e => updatePoste(index, 'personnes_exposees', e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#26658C]"
+                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
                               placeholder="Nombre de personnes"
                               required
                             />
@@ -572,7 +619,7 @@ export default function Nouveau({ auth, matrice_id, matrice }) {
                               step="0.5"
                               value={poste.duree_shift}
                               onChange={e => updatePoste(index, 'duree_shift', e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#26658C]"
+                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
                               placeholder="Durée en heures"
                               required
                             />
@@ -587,7 +634,7 @@ export default function Nouveau({ auth, matrice_id, matrice }) {
                               step="0.5"
                               value={poste.duree_exposition_quotidienne}
                               onChange={e => updatePoste(index, 'duree_exposition_quotidienne', e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#26658C]"
+                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
                               placeholder="Durée exposition en heures"
                               required
                             />
@@ -601,7 +648,7 @@ export default function Nouveau({ auth, matrice_id, matrice }) {
                               type="number"
                               value={poste.nb_shifts}
                               onChange={e => updatePoste(index, 'nb_shifts', e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#26658C]"
+                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
                               placeholder="Nombre de shifts par jour"
                               required
                             />
@@ -609,7 +656,7 @@ export default function Nouveau({ auth, matrice_id, matrice }) {
                         </div>
                       </div>
                       
-                      <div className="mt-4">
+                      <div className="mt-6">
                         <label className="block text-sm font-medium text-gray-700 mb-2">Composants à analyser</label>
                         <PosteComposants 
                           poste={poste} 
@@ -624,33 +671,36 @@ export default function Nouveau({ auth, matrice_id, matrice }) {
                     <button
                       type="button"
                       onClick={addPoste}
-                      className="px-6 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 transition duration-200"
+                      className="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 transition duration-200 flex items-center space-x-2 font-medium"
                     >
-                      + Ajouter un poste
+                      <FaPlus className="w-4 h-4" />
+                      <span>Ajouter un poste</span>
                     </button>
                   </div>
                   
-                  <div className="flex justify-between pt-6">
+                  <div className="flex justify-between pt-8">
                     <button
                       type="button"
                       onClick={prevStep}
-                      className="px-6 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 transition duration-200"
+                      className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 transition duration-200 flex items-center space-x-2 font-medium"
                     >
-                      Précédent
+                      <FaArrowLeft className="w-4 h-4" />
+                      <span>Précédent</span>
                     </button>
                     <button
                       type="submit"
                       disabled={processing}
-                      className="px-6 py-2 bg-[#26658C] text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-[#26658C] transition duration-200 flex items-center space-x-2"
+                      className="px-8 py-3 bg-[#26658C] text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-[#26658C] transition duration-200 flex items-center space-x-2 font-medium shadow-lg"
                     >
                       {processing ? (
                         <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                           <span>Soumission...</span>
                         </>
                       ) : (
                         <>
-                          <span>✅ Soumettre la Demande</span>
+                          <FaPaperPlane className="w-5 h-5" />
+                          <span className="text-lg">Soumettre la Demande</span>
                         </>
                       )}
                     </button>
