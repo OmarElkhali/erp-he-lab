@@ -8,6 +8,8 @@ use App\Http\Controllers\DemandeController;
 use App\Http\Controllers\ComposantController;
 use App\Http\Controllers\NotificationController;
 use App\Models\Matrice;
+use App\Models\Ville;
+use Illuminate\Support\Facades\Log; 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
@@ -21,6 +23,35 @@ Route::get('/', function () {
         'phpVersion' => PHP_VERSION,
     ]);
 });
+
+// ========== ROUTES API ACCESSIBLES SANS AUTH (DOIT ÊTRE EN DEHORS DU GROUPE AUTH) ==========
+
+// API Villes - ACCESSIBLE SANS AUTHENTIFICATION (TRÈS IMPORTANT)
+Route::get('/api/villes', function () {
+    try {
+        Log::info('📥 Requête API villes reçue');
+        $villes = Ville::orderBy('nom')->get(['id', 'nom', 'frais_deplacement']);
+        Log::info('✅ Villes chargées: ' . $villes->count() . ' villes trouvées');
+        return response()->json($villes);
+    } catch (\Exception $e) {
+        Log::error('❌ Erreur chargement villes: ' . $e->getMessage());
+        return response()->json(['error' => 'Erreur serveur: ' . $e->getMessage()], 500);
+    }
+});
+
+// Entreprises - ACCESSIBLE SANS AUTHENTIFICATION (pour l'autocomplete ICE)
+Route::get('/entreprises/find/{ice}', [EntrepriseController::class, 'findByIce'])
+    ->name('entreprises.find');
+
+// API Composants - ACCESSIBLE SANS AUTHENTIFICATION
+Route::get('/api/composants', [ComposantController::class, 'index']);
+
+// API Matrices - ACCESSIBLE SANS AUTHENTIFICATION
+Route::get('/api/matrices', function () {
+    return Matrice::all(['id', 'label', 'value', 'abreviation']);
+});
+
+// ========== ROUTES PROTÉGÉES (nécessitent auth) ==========
 
 Route::get('/dashboard', function () {
     $user = auth()->user();
@@ -55,7 +86,7 @@ Route::get('/user/dashboard', function () {
 Route::middleware(['auth', 'verified'])->group(function () {
     // Routes utilisateur
     Route::middleware(['can:isUser'])->group(function () {
-         // Demandes - AJOUTER LA ROUTE MANQUANTE ICI
+         // Demandes
         Route::get('/demandes/nouveau', [DemandeController::class, 'create'])->name('demandes.create'); 
         Route::post('/demandes', [DemandeController::class, 'store'])->name('demandes.store');
         Route::get('/historique/matrice/{matrice_id}', [DemandeController::class, 'historiqueMatrice'])->name('historique.matrice');
@@ -84,18 +115,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/admin/demandes/{demande}/telecharger', [DemandeController::class, 'telechargerDemande'])->name('admin.demandes.telecharger');
     });
 
-   
-});
-// ✅ ROUTES POUR LES NOTIFICATIONS
-Route::middleware(['auth', 'verified'])->group(function () {
-    // Route principale qui redirige selon le rôle
+    // ✅ ROUTES POUR LES NOTIFICATIONS - PROTÉGÉES
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications');
-    
-    // Routes spécifiques
     Route::get('/admin/notifications', [NotificationController::class, 'adminIndex'])->name('admin.notifications');
     Route::get('/user/notifications', [NotificationController::class, 'userIndex'])->name('user.notifications');
-    
-    // Routes API
     Route::post('/notifications', [NotificationController::class, 'store']);
     Route::put('/notifications/{notification}', [NotificationController::class, 'update']);
     Route::put('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
@@ -104,21 +127,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/api/admin-notifications', [NotificationController::class, 'getAdminNotifications']);
 });
 
-// Entreprises
-Route::get('/entreprises/find/{ice}', [EntrepriseController::class, 'findByIce'])
-    ->middleware(['auth', 'verified'])
-    ->name('entreprises.find');
-
-// API Composants
-Route::get('/api/composants', [ComposantController::class, 'index'])
-    ->middleware(['auth', 'verified']);
-
-// API Matrices
-Route::get('/api/matrices', function () {
-    return Matrice::all(['id', 'label', 'value', 'abreviation']);
-})->middleware(['auth', 'verified']);
-
-// Profile routes
+// Profile routes - PROTÉGÉES
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

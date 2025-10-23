@@ -8,91 +8,85 @@ use Illuminate\Http\Request;
 
 class ChiffrageController extends Controller
 {
-   public function calculerCoutTotal(Demande $demande)
-{
-    // Récupération des coûts depuis la BDD
-    $C1 = Cout::where('code', 'C1')->value('valeur') ?? 700; // Prélèvement - FIXE par poste et famille
-    $C4 = Cout::where('code', 'C4')->value('valeur') ?? 200; // Rapport - FIXE par affaire
-    $C5 = Cout::where('code', 'C5')->value('valeur') ?? 300; // Logistique - FIXE par dossier
-    
-    // C2 doit être par famille, donc on le récupère différemment
-    $coutsFamilles = [
-        'B01' => 200, // Métaux lourds
-        'D01' => 250, // Solvants aromatiques  
-        'D02' => 300, // Solvants chlorés
-        'A01' => 150, // Poussières
-        'C01' => 180, // Gaz
-    ];
-    
-    // C6 - Déplacement (saisie manuelle, à stocker dans la demande)
-    $C6 = $demande->frais_deplacement ?? 0;
-
-    $totalPostes = 0;
-    $detailPostes = [];
-
-    foreach ($demande->postes as $posteIndex => $poste) {
-        // Regrouper les composants par famille
-        $familles = $poste->composants->groupBy('famille.code');
+    public function calculerCoutTotal(Demande $demande)
+    {
+        // Récupération des coûts FIXES depuis la BDD
+        $C1 = Cout::where('code', 'C1')->value('valeur') ?? 700; // Prélèvement (Fixe)
+        $C4 = Cout::where('code', 'C4')->value('valeur') ?? 200; // Rapport (Fixe)
+        $C5 = Cout::where('code', 'C5')->value('valeur') ?? 300; // Logistique (Fixe)
         
-        $coutPoste = 0;
-        $detailFamilles = [];
+        // C6 (Déplacement) récupéré depuis le site
+        $C6 = $demande->site->ville->frais_deplacement ?? 0;
 
-        foreach ($familles as $codeFamille => $composantsFamille) {
-            // C1: Prélèvement - 700 MAD par poste ET par famille
-            $coutC1 = $C1;
+        $totalPostes = 0;
+        $detailPostes = [];
+
+        foreach ($demande->postes as $posteIndex => $poste) {
+            // Regrouper les composants par famille
+            $familles = $poste->composants->groupBy('famille_id');
             
-            // C2: Préparation - Coût fixe par famille
-            $coutC2 = $coutsFamilles[$codeFamille] ?? 200;
+            $coutPoste = 0;
+            $detailFamilles = [];
+
+            foreach ($familles as $familleId => $composantsFamille) {
+                $famille = $composantsFamille->first()->famille;
+                
+                // C1: Prélèvement - 700 MAD par poste et par famille
+                $C1_famille = $C1;
+                
+                // C2: Préparation - Coût fixe par famille
+                $C2_famille = $famille->cout_preparation ?? 200;
+                
+                // C3: Analyse - Somme des coûts d'analyse par composant
+                $C3_famille = $composantsFamille->sum('cout_analyse');
+                
+                $coutFamille = $C1_famille + $C2_famille + $C3_famille;
+                $coutPoste += $coutFamille;
+
+                $detailFamilles[] = [
+                    'famille' => $famille->libelle,
+                    'C1' => $C1_famille,
+                    'C2' => $C2_famille,
+                    'C3' => $C3_famille,
+                    'total_famille' => $coutFamille
+                ];
+            }
             
-            // C3: Analyse - Somme des coûts d'analyse par composant
-            $coutC3 = $composantsFamille->sum('cout_analyse');
-            
-            $coutFamille = $coutC1 + $coutC2 + $coutC3;
-            $coutPoste += $coutFamille;
-            
-            $detailFamilles[$codeFamille] = [
-                'C1' => $coutC1,
-                'C2' => $coutC2, 
-                'C3' => $coutC3,
-                'total_famille' => $coutFamille
+            $totalPostes += $coutPoste;
+            $detailPostes[] = [
+                'poste' => $poste->nom_poste,
+                'total_poste' => $coutPoste,
+                'familles' => $detailFamilles
             ];
         }
+
+        // Calcul du prix total selon la formule
+        $prixTotal = $C4 + $C5 + $totalPostes + $C6;
         
-        $totalPostes += $coutPoste;
-        $detailPostes[$posteIndex] = [
-            'nom_poste' => $poste->nom_poste,
-            'total_poste' => $coutPoste,
-            'familles' => $detailFamilles
+        return [
+            'total' => $prixTotal,
+            'detail' => [
+                'C1_total' => $C1 * collect($detailPostes)->sum(function($poste) {
+                    return count($poste['familles']);
+                }), // Total C1 pour toutes les familles
+                'C2_total' => collect($detailPostes)->sum(function($poste) {
+                    return collect($poste['familles'])->sum('C2');
+                }),
+                'C3_total' => collect($detailPostes)->sum(function($poste) {
+                    return collect($poste['familles'])->sum('C3');
+                }),
+                'C4' => $C4,
+                'C5' => $C5,
+                'C6' => $C6,
+                'total_postes' => $totalPostes,
+                'detail_postes' => $detailPostes
+            ]
         ];
     }
 
-    $prixTotal = $C4 + $C5 + $totalPostes + $C6;
-    
-    return [
-        'total' => $prixTotal,
-        'detail' => [
-            'C1_total' => $C1 * array_reduce($detailPostes, function($carry, $poste) {
-                return $carry + count($poste['familles']);
-            }, 0),
-            'C2_total' => array_reduce($detailPostes, function($carry, $poste) {
-                return $carry + array_sum(array_column($poste['familles'], 'C2'));
-            }, 0),
-            'C3_total' => array_reduce($detailPostes, function($carry, $poste) {
-                return $carry + array_sum(array_column($poste['familles'], 'C3'));
-            }, 0),
-            'C4' => $C4,
-            'C5' => $C5,
-            'C6' => $C6,
-            'total_postes' => $totalPostes,
-            'detail_postes' => $detailPostes
-        ]
-    ];
-}
-
-    // Nouvelle méthode pour récupérer le coût d'une demande
     public function getCoutDemande($demandeId)
     {
-        $demande = Demande::with(['postes.composants.famille'])->findOrFail($demandeId);
+        $demande = Demande::with(['site', 'postes.composants.famille'])->findOrFail($demandeId);
         return response()->json($this->calculerCoutTotal($demande));
     }
 }

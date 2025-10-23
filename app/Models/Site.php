@@ -9,7 +9,8 @@ class Site extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['entreprise_id', 'nom_site', 'ville', 'code_site'];
+    
+    protected $fillable = ['entreprise_id', 'ville_id', 'nom_site', 'code_site'];
 
     public function entreprise()
     {
@@ -24,5 +25,18 @@ class Site extends Model
     public function postes()
     {
         return $this->hasMany(Poste::class);
+    }
+    public function ville()
+    {
+        return $this->belongsTo(Ville::class);
+    }
+     // Accessor pour obtenir le nom de la ville
+    public function getNomVilleAttribute()
+    {
+        return $this->ville->nom;
+    }
+     public function getFraisDeplacementAttribute()
+    {
+        return $this->ville->frais_deplacement;
     }
 }

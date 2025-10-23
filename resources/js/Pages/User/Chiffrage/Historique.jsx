@@ -198,7 +198,9 @@ export default function Historique({ auth, demandes, matrice }) {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">{demande.site.nom_site}</div>
-                      <div className="text-sm text-gray-500">{demande.site.ville}</div>
+                       <div className="text-sm text-gray-500">
+                        {demande.site.ville?.nom || 'Ville non spécifiée'}
+                      </div>
                       {demande.site.code_site && (
                         <div className="text-xs text-gray-400">Code: {demande.site.code_site}</div>
                       )}

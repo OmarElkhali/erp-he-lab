@@ -33,7 +33,7 @@ class DemandeController extends Controller
     }
 
 
-   public function store(Request $request)
+public function store(Request $request)
 {
     DB::beginTransaction();
     
@@ -52,13 +52,13 @@ class DemandeController extends Controller
             ]
         );
 
-        // 2. Créer les sites
+        // 2. Créer les sites AVEC ville_id
         $siteIds = [];
         foreach ($request->sites as $siteData) {
             $site = Site::create([
                 'entreprise_id' => $entreprise->id,
                 'nom_site' => $siteData['nom_site'],
-                'ville' => $siteData['ville'],
+                'ville_id' => $siteData['ville_id'],
                 'code_site' => $siteData['code_site'] ?? null,
             ]);
             $siteIds[] = $site->id;
@@ -66,7 +66,7 @@ class DemandeController extends Controller
 
         // 3. Créer la demande AVEC user_id
         $demande = Demande::create([
-            'user_id' => auth()->id(), // ✅ AJOUTER ICI
+            'user_id' => auth()->id(),
             'entreprise_id' => $entreprise->id,
             'matrice_id' => $request->matrice_id,
             'site_id' => $siteIds[0],
@@ -114,13 +114,13 @@ class DemandeController extends Controller
                     'ice' => $entreprise->ice,
                     'matrice' => $matrice->label,
                     'site' => $site->nom_site,
-                    'ville' => $site->ville,
+                    'ville' => $site->ville->nom ?? 'Non spécifiée',
                     'postes_count' => $postesCount,
                     'contact_nom' => $demande->contact_nom_demande,
                     'contact_email' => $demande->contact_email_demande,
                     'contact_tel' => $demande->contact_tel_demande,
                     'date_creation' => $demande->date_creation,
-                    'user_id' => auth()->id(), // ID de l'utilisateur qui a créé la demande
+                    'user_id' => auth()->id(),
                 ],
                 'is_read' => false,
                 'is_accepted' => null
@@ -148,6 +148,7 @@ public function historiqueMatrice($matrice_id)
         $demandes = Demande::with([
             'entreprise',
             'site', 
+            'site.ville',
             'postes.composants.famille' // Charger les postes avec leurs composants et familles
         ])
         ->where('matrice_id', $matrice_id)
@@ -155,7 +156,7 @@ public function historiqueMatrice($matrice_id)
         ->get();
 
         // Calculer le coût total pour chaque demande
-        $chiffrageController = new ChiffrageController();
+       $chiffrageController = new ChiffrageController();
         foreach ($demandes as $demande) {
             $demande->cout_total = $chiffrageController->calculerCoutTotal($demande)['total'];
         }
@@ -298,7 +299,7 @@ public function update(Request $request, Demande $demande)
                     'nom_site' => $siteData['nom_site']
                 ],
                 [
-                    'ville' => $siteData['ville'],
+                    'ville_id' => $siteData['ville_id'],
                     'code_site' => $siteData['code_site'] ?? null,
                 ]
             );
