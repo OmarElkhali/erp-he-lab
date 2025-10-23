@@ -141,24 +141,30 @@ class DemandeController extends Controller
     }
 }
 
- public function historiqueMatrice($matrice_id)
-        {
-            $matrice = Matrice::findOrFail($matrice_id);
-            
-            $demandes = Demande::with([
-                'entreprise',
-                'site', 
-                'postes.composants' // Charger les postes avec leurs composants
-            ])
-            ->where('matrice_id', $matrice_id)
-            ->orderBy('created_at', 'desc')
-            ->get();
+public function historiqueMatrice($matrice_id)
+    {
+        $matrice = Matrice::findOrFail($matrice_id);
+        
+        $demandes = Demande::with([
+            'entreprise',
+            'site', 
+            'postes.composants.famille' // Charger les postes avec leurs composants et familles
+        ])
+        ->where('matrice_id', $matrice_id)
+        ->orderBy('created_at', 'desc')
+        ->get();
 
-            return Inertia::render('User/Chiffrage/Historique', [
-                'demandes' => $demandes,
-                'matrice' => $matrice
-            ]);
+        // Calculer le coût total pour chaque demande
+        $chiffrageController = new ChiffrageController();
+        foreach ($demandes as $demande) {
+            $demande->cout_total = $chiffrageController->calculerCoutTotal($demande)['total'];
         }
+
+        return Inertia::render('User/Chiffrage/Historique', [
+            'demandes' => $demandes,
+            'matrice' => $matrice
+        ]);
+    }
     public function accepterDemande(Demande $demande)
     {
         DB::beginTransaction();
@@ -234,6 +240,114 @@ class DemandeController extends Controller
     } catch (\Exception $e) {
         DB::rollBack();
         return response()->json(['error' => 'Erreur: ' . $e->getMessage()], 500);
+    }
+}
+public function edit(Demande $demande)
+{
+    // Vérifier que l'utilisateur peut modifier cette demande
+    if (!in_array($demande->statut, ['en_attente', 'refusee'])) {
+        abort(403, 'Cette demande ne peut pas être modifiée');
+    }
+
+    $demande->load([
+        'entreprise',
+        'site',
+        'postes.composants'
+    ]);
+
+    $matrices = Matrice::all();
+
+    return Inertia::render('User/Chiffrage/Edit', [
+        'demande' => $demande,
+        'matrices' => $matrices,
+        'auth' => ['user' => auth()->user()]
+    ]);
+}
+public function update(Request $request, Demande $demande)
+{
+    // Vérifier que la demande peut être modifiée
+    if (!in_array($demande->statut, ['en_attente', 'refusee'])) {
+        return back()->withErrors([
+            'error' => 'Cette demande ne peut pas être modifiée'
+        ]);
+    }
+
+    DB::beginTransaction();
+    
+    try {
+        // 1. Mettre à jour l'entreprise
+        $entreprise = Entreprise::updateOrCreate(
+            ['ice' => $request->ice],
+            [
+                'nom' => $request->nom,
+                'adresse' => $request->adresse,
+                'contact_nom' => $request->contact_nom,
+                'contact_prenom' => $request->contact_prenom,
+                'contact_fonction' => $request->contact_fonction,
+                'telephone' => $request->telephone,
+                'email' => $request->email,
+            ]
+        );
+
+        // 2. Mettre à jour les sites
+        $siteIds = [];
+        foreach ($request->sites as $siteData) {
+            $site = Site::updateOrCreate(
+                [
+                    'entreprise_id' => $entreprise->id,
+                    'nom_site' => $siteData['nom_site']
+                ],
+                [
+                    'ville' => $siteData['ville'],
+                    'code_site' => $siteData['code_site'] ?? null,
+                ]
+            );
+            $siteIds[] = $site->id;
+        }
+
+        // 3. Mettre à jour la demande
+        $demande->update([
+            'entreprise_id' => $entreprise->id,
+            'matrice_id' => $request->matrice_id,
+            'site_id' => $siteIds[0],
+            'contact_nom_demande' => $request->contact_nom_demande ?? $request->contact_nom,
+            'contact_email_demande' => $request->contact_email_demande ?? $request->email,
+            'contact_tel_demande' => $request->contact_tel_demande ?? $request->telephone,
+        ]);
+
+        // 4. Supprimer les anciens postes et recréer
+        $demande->postes()->delete();
+
+        foreach ($request->postes as $posteData) {
+            $poste = Poste::create([
+                'demande_id' => $demande->id,
+                'site_id' => $siteIds[0],
+                'nom_poste' => $posteData['nom_poste'],
+                'zone_activite' => $posteData['zone_activite'],
+                'description' => $posteData['description'],
+                'personnes_exposees' => $posteData['personnes_exposees'],
+                'duree_shift' => $posteData['duree_shift'],
+                'duree_exposition_quotidienne' => $posteData['duree_exposition_quotidienne'],
+                'nb_shifts' => $posteData['nb_shifts'],
+            ]);
+
+            // Attacher les composants
+            if (!empty($posteData['composants'])) {
+                $poste->composants()->attach($posteData['composants']);
+            }
+        }
+
+        DB::commit();
+
+        return redirect()->route('historique.matrice', ['matrice_id' => $demande->matrice_id])
+            ->with('success', 'Demande modifiée avec succès!');
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        
+        return back()->withErrors([
+            'error' => 'Erreur lors de la modification de la demande: ' . $e->getMessage()
+        ]);
     }
 }
 

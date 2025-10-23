@@ -245,7 +245,6 @@ export default function Nouveau({ auth, matrice_id, matrice }) {
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="text-center mb-8">
               <h1 className="text-3xl font-bold text-[#26658C]">Nouvelle Demande d'Analyse</h1>
-              
             </div>
             
             {/* Indicateur d'étapes */}

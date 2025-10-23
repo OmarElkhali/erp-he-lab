@@ -1,5 +1,7 @@
 <?php
 // routes/web.php
+
+use App\Http\Controllers\ChiffrageController;
 use App\Http\Controllers\EntrepriseController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\DemandeController;
@@ -54,13 +56,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Routes utilisateur
     Route::middleware(['can:isUser'])->group(function () {
          // Demandes - AJOUTER LA ROUTE MANQUANTE ICI
-        Route::get('/demandes/nouveau', [DemandeController::class, 'create'])->name('demandes.create'); // ✅ AJOUTÉ
+        Route::get('/demandes/nouveau', [DemandeController::class, 'create'])->name('demandes.create'); 
         Route::post('/demandes', [DemandeController::class, 'store'])->name('demandes.store');
         Route::get('/historique/matrice/{matrice_id}', [DemandeController::class, 'historiqueMatrice'])->name('historique.matrice');
         Route::get('/demandes/{demande}', [DemandeController::class, 'show'])->name('demandes.show');
         Route::get('/demandes/{demande}/edit', [DemandeController::class, 'edit'])->name('demandes.edit');
         Route::put('/demandes/{demande}', [DemandeController::class, 'update'])->name('demandes.update');
         Route::delete('/demandes/{demande}', [DemandeController::class, 'destroy'])->name('demandes.destroy');
+        Route::get('/api/demandes/{demande}/cout', [ChiffrageController::class, 'getCoutDemande']);
         
         // Chiffrage (redirections)
         Route::get('User/Chiffrage/Nouveau', function (Request $request) {

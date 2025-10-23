@@ -176,6 +176,9 @@ export default function Historique({ auth, demandes, matrice }) {
                     Postes
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Coût Total
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Statut
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -217,8 +220,17 @@ export default function Historique({ auth, demandes, matrice }) {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-semibold text-green-600">
+                        {demande.cout_total?.toLocaleString('fr-FR')} MAD
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        Devis
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
                       {getStatusBadge(demande.statut)}
                     </td>
+
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center space-x-4">
                         {/* Icône Voir - Toujours visible */}

@@ -13,6 +13,7 @@ return new class extends Migration {
             $table->foreignId('entreprise_id')->constrained()->onDelete('cascade');
             $table->foreignId('matrice_id')->constrained()->onDelete('cascade');
             $table->foreignId('site_id')->constrained()->onDelete('cascade');
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->date('date_creation');
             $table->enum('statut', ['en_attente', 'acceptee', 'refusee', 'en_cours', 'terminee'])->default('en_attente');
             $table->string('contact_nom_demande');
