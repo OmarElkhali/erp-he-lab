@@ -16,11 +16,10 @@ class ChiffrageController extends Controller
         $C5 = Cout::where('code', 'C5')->value('valeur') ?? 300; // Logistique (Fixe)
         
         // C6 (Déplacement) récupéré depuis le site
-        $C6 = $demande->site->ville->frais_deplacement ?? 0;
+        $C6 = $demande->site->frais_deplacement ?? 0;
 
         $totalPostes = 0;
         $detailPostes = [];
-        $totalFamilles = 0;
 
         foreach ($demande->postes as $posteIndex => $poste) {
             // Regrouper les composants par famille
@@ -43,7 +42,15 @@ class ChiffrageController extends Controller
                 
                 $coutFamille = $C1_famille + $C2_famille + $C3_famille;
                 $coutPoste += $coutFamille;
-                $totalFamilles++;
+
+                // 🔹 AJOUTER LES NOMS DES COMPOSANTS
+                $composantsDetails = $composantsFamille->map(function($composant) {
+                    return [
+                        'nom' => $composant->nom,
+                        'cas_number' => $composant->cas_number,
+                        'cout_analyse' => $composant->cout_analyse
+                    ];
+                });
 
                 $detailFamilles[] = [
                     'famille' => $famille->libelle,
@@ -51,13 +58,15 @@ class ChiffrageController extends Controller
                     'C2' => $C2_famille,
                     'C3' => $C3_famille,
                     'total_famille' => $coutFamille,
-                    'composants_count' => $composantsFamille->count()
+                    'composants' => $composantsDetails, // 🔹 AJOUTER LES COMPOSANTS
+                    'produit' => $poste->produit // 🔹 AJOUTER LE PRODUIT
                 ];
             }
             
             $totalPostes += $coutPoste;
             $detailPostes[] = [
                 'poste' => $poste->nom_poste,
+                'produit' => $poste->produit, // 🔹 AJOUTER LE PRODUIT AU NIVEAU POSTE
                 'total_poste' => $coutPoste,
                 'familles' => $detailFamilles
             ];
@@ -69,7 +78,9 @@ class ChiffrageController extends Controller
         return [
             'total' => $prixTotal,
             'detail' => [
-                'C1_total' => $C1 * $totalFamilles,
+                'C1_total' => $C1 * collect($detailPostes)->sum(function($poste) {
+                    return count($poste['familles']);
+                }),
                 'C2_total' => collect($detailPostes)->sum(function($poste) {
                     return collect($poste['familles'])->sum('C2');
                 }),
@@ -80,16 +91,14 @@ class ChiffrageController extends Controller
                 'C5' => $C5,
                 'C6' => $C6,
                 'total_postes' => $totalPostes,
-                'total_familles' => $totalFamilles,
-                'detail_postes' => $detailPostes,
-                'formule' => 'Prix Total = C4 + C5 + Σ[(C1 + C2 + C3) pour chaque famille dans chaque poste] + C6'
+                'detail_postes' => $detailPostes
             ]
         ];
     }
 
     public function getCoutDemande($demandeId)
     {
-        $demande = Demande::with(['site.ville', 'postes.composants.famille'])->findOrFail($demandeId);
+        $demande = Demande::with(['site', 'postes.composants.famille'])->findOrFail($demandeId);
         return response()->json($this->calculerCoutTotal($demande));
     }
 }

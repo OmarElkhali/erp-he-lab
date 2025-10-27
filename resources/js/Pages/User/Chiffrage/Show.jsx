@@ -213,56 +213,87 @@ export default function Show({ auth, demande }) {
             </div>
           </div>
 
-          {/* Détail par poste */}
-          <div className="mb-6">
-            <h3 className="text-md font-semibold text-gray-900 mb-4 flex items-center">
-              <FaListAlt className="text-[#26658C] w-4 h-4 mr-2" />
-              Détail par Poste ({coutDetails.detail.detail_postes.length} poste(s))
-            </h3>
-            
-            <div className="space-y-4">
-              {coutDetails.detail.detail_postes.map((detailPoste, posteIndex) => (
-                <div key={posteIndex} className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex justify-between items-center mb-3">
-                    <h4 className="font-medium text-gray-900">
-                      {detailPoste.poste} - {formatCurrency(detailPoste.total_poste)}
-                    </h4>
-                    <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
-                      {detailPoste.familles.length} famille(s)
-                    </span>
-                  </div>
 
-                  {/* Détail par famille */}
-                  <div className="space-y-3">
-                    {detailPoste.familles.map((famille, familleIndex) => (
-                      <div key={familleIndex} className="bg-gray-50 rounded p-3">
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="font-medium text-sm text-gray-900">{famille.famille}</span>
-                          <span className="text-sm font-semibold text-[#26658C]">
-                            {formatCurrency(famille.total_famille)}
-                          </span>
-                        </div>
-                        <div className="grid grid-cols-3 gap-2 text-xs">
-                          <div className="text-center">
-                            <span className="font-medium">Prélèvement</span>
-                            <p className="text-gray-600">{formatCurrency(famille.C1)}</p>
-                          </div>
-                          <div className="text-center">
-                            <span className="font-medium">Préparation</span>
-                            <p className="text-gray-600">{formatCurrency(famille.C2)}</p>
-                          </div>
-                          <div className="text-center">
-                            <span className="font-medium">Analyse</span>
-                            <p className="text-gray-600">{formatCurrency(famille.C3)}</p>
-                          </div>
-                        </div>
-                      </div>
+{/* Détail par poste */}
+<div className="mb-6">
+  <h3 className="text-md font-semibold text-gray-900 mb-4 flex items-center">
+    <FaListAlt className="text-[#26658C] w-4 h-4 mr-2" />
+    Détail par Poste ({coutDetails.detail.detail_postes.length} poste(s))
+  </h3>
+  
+  <div className="space-y-4">
+    {coutDetails.detail.detail_postes.map((detailPoste, posteIndex) => (
+      <div key={posteIndex} className="border border-gray-200 rounded-lg p-4">
+        <div className="flex justify-between items-center mb-3">
+          <div>
+            <h4 className="font-medium text-gray-900">
+              {detailPoste.poste} - {formatCurrency(detailPoste.total_poste)}
+            </h4>
+            {/* 🔹 AFFICHER LE PRODUIT */}
+            {detailPoste.produit && (
+              <p className="text-sm text-gray-600 mt-1">
+                <span className="font-medium">Produit analysé:</span> {detailPoste.produit}
+              </p>
+            )}
+          </div>
+          <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
+            {detailPoste.familles.length} famille(s)
+          </span>
+        </div>
+
+        {/* Détail par famille */}
+        <div className="space-y-3">
+          {detailPoste.familles.map((famille, familleIndex) => (
+            <div key={familleIndex} className="bg-gray-50 rounded p-3">
+              <div className="flex justify-between items-center mb-2">
+                <span className="font-medium text-sm text-gray-900">{famille.famille}</span>
+                <span className="text-sm font-semibold text-[#26658C]">
+                  {formatCurrency(famille.total_famille)}
+                </span>
+              </div>
+              
+              {/* 🔹 AFFICHER LES COMPOSANTS */}
+              {famille.composants && famille.composants.length > 0 && (
+                <div className="mb-3">
+                  <span className="text-xs font-medium text-gray-700">Composants analysés:</span>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {famille.composants.map((composant, compIndex) => (
+                      <span
+                        key={compIndex}
+                        className="inline-flex items-center px-2 py-1 rounded text-xs bg-green-100 text-green-800"
+                      >
+                        {composant.nom}
+                        {composant.cas_number && (
+                          <span className="ml-1 text-green-600">({composant.cas_number})</span>
+                        )}
+                        <span className="ml-1 font-medium">{formatCurrency(composant.cout_analyse)}</span>
+                      </span>
                     ))}
                   </div>
                 </div>
-              ))}
+              )}
+
+              <div className="grid grid-cols-3 gap-2 text-xs">
+                <div className="text-center">
+                  <span className="font-medium">Prélèvement</span>
+                  <p className="text-gray-600">{formatCurrency(famille.C1)}</p>
+                </div>
+                <div className="text-center">
+                  <span className="font-medium">Préparation</span>
+                  <p className="text-gray-600">{formatCurrency(famille.C2)}</p>
+                </div>
+                <div className="text-center">
+                  <span className="font-medium">Analyse</span>
+                  <p className="text-gray-600">{formatCurrency(famille.C3)}</p>
+                </div>
+              </div>
             </div>
-          </div>
+          ))}
+        </div>
+      </div>
+    ))}
+  </div>
+</div>
 
           {/* Récapitulatif des coûts variables */}
           <div className="bg-gray-50 rounded-lg p-4">
@@ -313,13 +344,21 @@ export default function Show({ auth, demande }) {
           {demande.postes.map((poste, index) => (
             <div key={poste.id} className="border border-gray-200 rounded-lg p-4">
               <div className="flex justify-between items-start mb-4">
-                <h3 className="text-md font-semibold text-gray-900">
-                  Poste {index + 1}: {poste.nom_poste}
-                </h3>
-                <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
-                  {poste.zone_activite}
-                </span>
-              </div>
+                    <div>
+                      <h3 className="text-md font-semibold text-gray-900">
+                        Poste {index + 1}: {poste.nom_poste}
+                      </h3>
+                      {/* 🔹 AFFICHER LE PRODUIT */}
+                      {poste.produit && (
+                        <p className="text-sm text-gray-600 mt-1">
+                          <span className="font-medium">Produit:</span> {poste.produit}
+                        </p>
+                      )}
+                    </div>
+                    <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
+                      {poste.zone_activite}
+                    </span>
+                  </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                 <div className="flex items-center space-x-2">
