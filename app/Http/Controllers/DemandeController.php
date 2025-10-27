@@ -405,8 +405,7 @@ public function destroy(Demande $demande)
         $demande->load([
             'entreprise',
             'matrice', 
-            'site.ville', // ✅ CHANGER ICI - charger la relation ville
-            'postes.composants.famille', // Optionnel: charger aussi les familles des composants
+            'site.ville', 
             'site',
             'postes.composants'
         ]);

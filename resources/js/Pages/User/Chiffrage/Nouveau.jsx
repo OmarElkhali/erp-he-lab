@@ -517,12 +517,15 @@ export default function Nouveau({ auth, matrice_id, matrice }) {
                                                 
                                                 <div>
                                                     <label className="block text-sm font-medium text-gray-700 mb-2">Code site</label>
-                                                    <input
+                                                   <input
                                                         type="text"
                                                         value={site.code_site}
-                                                        onChange={e => updateSite(index, 'code_site', e.target.value)}
+                                                        onChange={e => {
+                                                            const value = e.target.value.replace(/[^a-zA-Z0-9]/g, '');
+                                                            updateSite(index, 'code_site', value);
+                                                        }}
                                                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
-                                                        placeholder="Saisir code site (optionnel)"
+                                                        placeholder="Saisir le Code site"
                                                     />
                                                 </div>
                                             </div>
@@ -637,8 +640,12 @@ export default function Nouveau({ auth, matrice_id, matrice }) {
                                                         </label>
                                                         <input
                                                             type="number"
+                                                            min="1"
                                                             value={poste.personnes_exposees}
-                                                            onChange={e => updatePoste(index, 'personnes_exposees', e.target.value)}
+                                                            onChange={e => {
+                                                                const value = Math.max(1, parseInt(e.target.value) || 1);
+                                                                updatePoste(index, 'personnes_exposees', value);
+                                                            }}
                                                             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
                                                             placeholder="Nombre de personnes"
                                                             required
@@ -651,11 +658,15 @@ export default function Nouveau({ auth, matrice_id, matrice }) {
                                                         </label>
                                                         <input
                                                             type="number"
-                                                            step="0.5"
+                                                            min="1"
+                                                            step="1"
                                                             value={poste.duree_shift}
-                                                            onChange={e => updatePoste(index, 'duree_shift', e.target.value)}
+                                                            onChange={e => {
+                                                                const value = Math.max(1, parseInt(e.target.value) || 1);
+                                                                updatePoste(index, 'duree_shift', value);
+                                                            }}
                                                             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
-                                                            placeholder="Durée en heures"
+                                                            placeholder="Durée en heures "
                                                             required
                                                         />
                                                     </div>
@@ -666,11 +677,15 @@ export default function Nouveau({ auth, matrice_id, matrice }) {
                                                         </label>
                                                         <input
                                                             type="number"
-                                                            step="0.5"
+                                                            min="1"
+                                                            step="1"
                                                             value={poste.duree_exposition_quotidienne}
-                                                            onChange={e => updatePoste(index, 'duree_exposition_quotidienne', e.target.value)}
+                                                            onChange={e => {
+                                                                const value = Math.max(1, parseInt(e.target.value) || 1);
+                                                                updatePoste(index, 'duree_exposition_quotidienne', value);
+                                                            }}
                                                             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
-                                                            placeholder="Durée exposition en heures"
+                                                            placeholder="Durée exposition en heures "
                                                             required
                                                         />
                                                     </div>
@@ -679,15 +694,19 @@ export default function Nouveau({ auth, matrice_id, matrice }) {
                                                         <label className="block text-sm font-medium text-gray-700 mb-2">
                                                             Nombre de shifts <span className="text-red-500">*</span>
                                                         </label>
-                                                        <input
-                                                            type="number"
-                                                            value={poste.nb_shifts}
-                                                            onChange={e => updatePoste(index, 'nb_shifts', e.target.value)}
-                                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
-                                                            placeholder="Nombre de shifts par jour"
-                                                            required
-                                                        />
-                                                    </div>
+                                                       <input
+                                                    type="number"
+                                                    min="1"
+                                                    step="1"
+                                                    value={poste.nb_shifts}
+                                                    onChange={e => {
+                                                        const value = Math.max(1, parseInt(e.target.value) || 1);
+                                                        updatePoste(index, 'nb_shifts', value);
+                                                    }}
+                                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
+                                                    placeholder="Nombre de shifts par jour "
+                                                    required
+                                                />                                                   </div>
                                                 </div>
                                             </div>
                                             
