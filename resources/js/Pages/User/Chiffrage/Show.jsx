@@ -181,6 +181,7 @@ export default function Show({ auth, demande }) {
               <span className="text-lg font-bold">{formatCurrency(coutDetails.total)}</span>
             </div>
           </div>
+          
 
           {/* Coûts fixes */}
           <div className="mb-6">
