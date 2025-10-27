@@ -90,6 +90,7 @@ public function store(Request $request)
                 'duree_shift' => $posteData['duree_shift'],
                 'duree_exposition_quotidienne' => $posteData['duree_exposition_quotidienne'],
                 'nb_shifts' => $posteData['nb_shifts'],
+                'produit' => $posteData['produit'] ?? '',
             ]);
             $postesCount++;
 
@@ -330,6 +331,7 @@ public function update(Request $request, Demande $demande)
                 'duree_shift' => $posteData['duree_shift'],
                 'duree_exposition_quotidienne' => $posteData['duree_exposition_quotidienne'],
                 'nb_shifts' => $posteData['nb_shifts'],
+                'produit' => $posteData['produit'] ?? '',
             ]);
 
             // Attacher les composants

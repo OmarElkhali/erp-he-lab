@@ -6,8 +6,7 @@ import axios from "axios";
 import Swal from 'sweetalert2';
 import { FaCheck, FaArrowRight, FaArrowLeft, FaPlus, FaPaperPlane } from 'react-icons/fa';
 
-
-function PosteComposants({ poste, index, toggleComposant }) {
+function PosteComposants({ poste, index, toggleComposant, updatePoste }) { // 🔹 AJOUTER updatePoste
     const [composants, setComposants] = useState([]);
     const [searchNom, setSearchNom] = useState('');
     const [searchCas, setSearchCas] = useState('');
@@ -16,6 +15,9 @@ function PosteComposants({ poste, index, toggleComposant }) {
     // États séparés pour les selects
     const [selectedNom, setSelectedNom] = useState([]);
     const [selectedCas, setSelectedCas] = useState([]);
+    
+    // 🔹 État pour le produit
+    const [produit, setProduit] = useState(poste.produit || '');
 
     // 🔹 Charger les composants
     useEffect(() => {
@@ -53,7 +55,7 @@ function PosteComposants({ poste, index, toggleComposant }) {
 
     // 🔹 Options pour le select par CAS
     const casOptions = composants
-        .filter(c => c.cas_number) // Filtrer les composants avec CAS
+        .filter(c => c.cas_number)
         .map(c => ({
             value: c.id,
             label: c.cas_number,
@@ -73,7 +75,7 @@ function PosteComposants({ poste, index, toggleComposant }) {
         setSelectedCas(correspondingCas);
         
         // Mettre à jour les composants du poste
-        toggleComposant(index, selectedIds);
+        toggleComposant(index, selectedIds, produit);
     };
 
     // 🔹 Gérer la sélection par CAS
@@ -88,7 +90,20 @@ function PosteComposants({ poste, index, toggleComposant }) {
         setSelectedNom(correspondingNoms);
         
         // Mettre à jour les composants du poste
-        toggleComposant(index, selectedIds);
+        toggleComposant(index, selectedIds, produit);
+    };
+
+    // 🔹 Gérer le changement de produit
+    const handleProduitChange = (e) => {
+        const newProduit = e.target.value;
+        setProduit(newProduit);
+        // Mettre à jour les composants avec le nouveau produit
+        toggleComposant(index, poste.composants, newProduit);
+    };
+
+    // 🔹 Gérer le changement de description - CORRECTION ICI
+    const handleDescriptionChange = (e) => {
+        updatePoste(index, 'description', e.target.value); // 🔹 APPELER updatePoste
     };
 
     // 🔹 Initialiser les selects avec les valeurs existantes
@@ -104,14 +119,49 @@ function PosteComposants({ poste, index, toggleComposant }) {
             );
             setSelectedCas(initialCasSelected);
         }
-    }, [composants, poste.composants]);
+        
+        // Initialiser le produit
+        if (poste.produit) {
+            setProduit(poste.produit);
+        }
+    }, [composants, poste.composants, poste.produit]);
 
     return (
         <div className="space-y-4">
+            {/* 🔹 Champ Produit */}
+            <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Produit <span className="text-red-500">*</span>
+                </label>
+                <input
+                    type="text"
+                    value={produit}
+                    onChange={handleProduitChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
+                    placeholder="Saisir le nom du produit à analyser"
+                    required
+                />
+            </div>
+
+            {/* 🔹 DESCRIPTION - CORRIGÉ */}
+            <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Description <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                    value={poste.description}
+                    onChange={handleDescriptionChange} // 🔹 CORRECTION ICI
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
+                    rows="3"
+                    placeholder="Décrire les opérations réalisées"
+                    required
+                />
+            </div>
+
             {/* Select par nom */}
             <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                 Nom du composant à analyser
+                    Nom du composant à analyser
                 </label>
                 <Select
                     options={nomOptions}
@@ -165,8 +215,6 @@ function PosteComposants({ poste, index, toggleComposant }) {
                     )}
                 />
             </div>
-
-          
         </div>
     );
 }
@@ -188,6 +236,7 @@ export default function Nouveau({ auth, matrice_id, matrice }) {
         duree_shift: '',
         duree_exposition_quotidienne: '',
         nb_shifts: '',
+        produit: '',
         composants: []
     }]);
 
@@ -343,6 +392,7 @@ export default function Nouveau({ auth, matrice_id, matrice }) {
             duree_shift: '',
             duree_exposition_quotidienne: '',
             nb_shifts: '',
+            produit: '',
             composants: []
         }];
         setPostes(newPostes);
@@ -355,18 +405,19 @@ export default function Nouveau({ auth, matrice_id, matrice }) {
         }
     };
 
-    const updatePoste = (index, field, value) => {
-        const newPostes = [...postes];
-        newPostes[index][field] = value;
-        setPostes(newPostes);
-    };
-
-    const toggleComposant = (posteIndex, composantIds) => {
-        const newPostes = [...postes];
-        newPostes[posteIndex].composants = composantIds; 
-        setPostes(newPostes);
-    };
-
+   const updatePoste = (index, field, value) => {
+    const newPostes = [...postes];
+    newPostes[index][field] = value;
+    setPostes(newPostes);
+};
+    const toggleComposant = (posteIndex, composantIds, produit = '') => {
+    const newPostes = [...postes];
+    newPostes[posteIndex].composants = composantIds;
+    if (produit !== '') {
+        newPostes[posteIndex].produit = produit;
+    }
+    setPostes(newPostes);
+};
     const nextStep = () => {
         setCurrentStep(currentStep + 1);
     };
@@ -677,206 +728,196 @@ export default function Nouveau({ auth, matrice_id, matrice }) {
                             
                             {/* ÉTAPE 3 - POSTES DE TRAVAIL + SOUMISSION */}
                            
-{currentStep === 3 && (
-    <div className="space-y-6">
-        <div className="text-center">
-            <h3 className="text-xl font-semibold text-[#26658C] mb-2">Postes de travail</h3>
-            <div className="w-20 h-1 bg-[#26658C] mx-auto rounded"></div>
-        </div>
-        
-        {postes.map((poste, index) => (
-            <div key={index} className="bg-gray-50 rounded-lg p-6 border border-gray-200">
-                <div className="flex justify-between items-center mb-6">
-                    <h4 className="text-lg font-medium text-[#26658C] flex items-center">
-                        <FaCheck className="mr-2" />
-                        Poste {index + 1}
-                    </h4>
-                    {postes.length > 1 && (
-                        <button
-                            type="button"
-                            onClick={() => removePoste(index)}
-                            className="text-red-500 hover:text-red-700 text-sm font-medium"
-                        >
-                            Supprimer
-                        </button>
-                    )}
+
+        {currentStep === 3 && (
+            <div className="space-y-6">
+                <div className="text-center">
+                    <h3 className="text-xl font-semibold text-[#26658C] mb-2">Postes de travail</h3>
+                    <div className="w-20 h-1 bg-[#26658C] mx-auto rounded"></div>
                 </div>
                 
-                <div className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Nom du poste <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            value={poste.nom_poste}
-                            onChange={e => updatePoste(index, 'nom_poste', e.target.value)}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
-                            placeholder="Saisir nom du poste"
-                            required
-                        />
-                    </div>
-                    
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Zone d'activité <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            value={poste.zone_activite}
-                            onChange={e => updatePoste(index, 'zone_activite', e.target.value)}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
-                            placeholder="Saisir zone d'activité"
-                            required
-                        />
-                    </div>
-                    
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Description <span className="text-red-500">*</span>
-                        </label>
-                        <textarea
-                            value={poste.description}
-                            onChange={e => updatePoste(index, 'description', e.target.value)}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
-                            rows="3"
-                            placeholder="Décrire les opérations réalisées"
-                            required
-                        />
-                    </div>
-                    
-                    {/* 🔹 CHAMPS CÔTE À CÔTE - MODIFIÉ */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* Colonne gauche */}
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Personnes exposées <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="number"
-                                    min="1"
-                                    value={poste.personnes_exposees}
-                                    onChange={e => {
-                                        const value = Math.max(1, parseInt(e.target.value) || 1);
-                                        updatePoste(index, 'personnes_exposees', value);
-                                    }}
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
-                                    placeholder="Nombre de personnes"
-                                    required
-                                />
-                            </div>
-                            
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Durée exposition quotidienne (heures) <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="number"
-                                    min="1"
-                                    step="1"
-                                    value={poste.duree_exposition_quotidienne}
-                                    onChange={e => {
-                                        const value = Math.max(1, parseInt(e.target.value) || 1);
-                                        updatePoste(index, 'duree_exposition_quotidienne', value);
-                                    }}
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
-                                    placeholder="Durée exposition en heures"
-                                    required
-                                />
-                            </div>
+                {postes.map((poste, index) => (
+                    <div key={index} className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+                        <div className="flex justify-between items-center mb-6">
+                            <h4 className="text-lg font-medium text-[#26658C] flex items-center">
+                                <FaCheck className="mr-2" />
+                                Poste {index + 1}
+                            </h4>
+                            {postes.length > 1 && (
+                                <button
+                                    type="button"
+                                    onClick={() => removePoste(index)}
+                                    className="text-red-500 hover:text-red-700 text-sm font-medium"
+                                >
+                                    Supprimer
+                                </button>
+                            )}
                         </div>
                         
-                        {/* Colonne droite */}
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Durée du shift (heures) <span className="text-red-500">*</span>
+                                    Nom du poste <span className="text-red-500">*</span>
                                 </label>
                                 <input
-                                    type="number"
-                                    min="1"
-                                    step="1"
-                                    value={poste.duree_shift}
-                                    onChange={e => {
-                                        const value = Math.max(1, parseInt(e.target.value) || 1);
-                                        updatePoste(index, 'duree_shift', value);
-                                    }}
+                                    type="text"
+                                    value={poste.nom_poste}
+                                    onChange={e => updatePoste(index, 'nom_poste', e.target.value)}
                                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
-                                    placeholder="Durée en heures"
+                                    placeholder="Saisir nom du poste"
                                     required
                                 />
                             </div>
                             
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Nombre de shifts <span className="text-red-500">*</span>
+                                    Zone d'activité <span className="text-red-500">*</span>
                                 </label>
                                 <input
-                                    type="number"
-                                    min="1"
-                                    step="1"
-                                    value={poste.nb_shifts}
-                                    onChange={e => {
-                                        const value = Math.max(1, parseInt(e.target.value) || 1);
-                                        updatePoste(index, 'nb_shifts', value);
-                                    }}
+                                    type="text"
+                                    value={poste.zone_activite}
+                                    onChange={e => updatePoste(index, 'zone_activite', e.target.value)}
                                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
-                                    placeholder="Nombre de shifts par jour"
+                                    placeholder="Saisir zone d'activité"
                                     required
                                 />
                             </div>
+                            
+                            {/* 🔹 CHAMPS CÔTE À CÔTE */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {/* Colonne gauche */}
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Personnes exposées <span className="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            value={poste.personnes_exposees}
+                                            onChange={e => {
+                                                const value = Math.max(1, parseInt(e.target.value) || 1);
+                                                updatePoste(index, 'personnes_exposees', value);
+                                            }}
+                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
+                                            placeholder="Nombre de personnes"
+                                            required
+                                        />
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Durée exposition quotidienne (heures) <span className="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            step="1"
+                                            value={poste.duree_exposition_quotidienne}
+                                            onChange={e => {
+                                                const value = Math.max(1, parseInt(e.target.value) || 1);
+                                                updatePoste(index, 'duree_exposition_quotidienne', value);
+                                            }}
+                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
+                                            placeholder="Durée exposition en heures"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+                                
+                                {/* Colonne droite */}
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Durée du shift (heures) <span className="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            step="1"
+                                            value={poste.duree_shift}
+                                            onChange={e => {
+                                                const value = Math.max(1, parseInt(e.target.value) || 1);
+                                                updatePoste(index, 'duree_shift', value);
+                                            }}
+                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
+                                            placeholder="Durée en heures"
+                                            required
+                                        />
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Nombre de shifts <span className="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            step="1"
+                                            value={poste.nb_shifts}
+                                            onChange={e => {
+                                                const value = Math.max(1, parseInt(e.target.value) || 1);
+                                                updatePoste(index, 'nb_shifts', value);
+                                            }}
+                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
+                                            placeholder="Nombre de shifts par jour"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                            
+                           
+                        </div>
+                        
+                        {/* 🔹 COMPOSANTS À ANALYSER AVEC PRODUIT */}
+                        <div className="mt-6">
+                            <PosteComposants 
+                                poste={poste} 
+                                index={index} 
+                                toggleComposant={toggleComposant}
+                                updatePoste={updatePoste} 
+                            />
                         </div>
                     </div>
+                ))}
+                
+                <div className="flex justify-start pt-4">
+                    <button
+                        type="button"
+                        onClick={addPoste}
+                        className="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 transition duration-200 flex items-center space-x-2 font-medium"
+                    >
+                        <FaPlus className="w-4 h-4" />
+                        <span>Ajouter un poste</span>
+                    </button>
                 </div>
                 
-                {/* 🔹 COMPOSANTS À ANALYSER - MODIFIÉ */}
-                <div className="mt-6">
-                    <PosteComposants 
-                        poste={poste} 
-                        index={index} 
-                        toggleComposant={toggleComposant} 
-                    />
-                </div>
-            </div>
-        ))}
-        
-        <div className="flex justify-start pt-4">
-            <button
-                type="button"
-                onClick={addPoste}
-                className="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 transition duration-200 flex items-center space-x-2 font-medium"
-            >
-                <FaPlus className="w-4 h-4" />
-                <span>Ajouter un poste</span>
-            </button>
-        </div>
-        
-        <div className="flex justify-between pt-8">
-            <button
-                type="button"
-                onClick={prevStep}
-                className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 transition duration-200 flex items-center space-x-2 font-medium"
-            >
-                <FaArrowLeft className="w-4 h-4" />
-                <span>Précédent</span>
-            </button>
-            <button
-                type="submit"
-                disabled={processing}
-                className="px-8 py-3 bg-[#26658C] text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-[#26658C] transition duration-200 flex items-center space-x-2 font-medium shadow-lg"
-            >
-                {processing ? (
-                    <>
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                        <span>Soumission...</span>
-                    </>
-                ) : (
-                    <>
-                        <FaPaperPlane className="w-5 h-5" />
-                        <span className="text-lg">Soumettre la Demande</span>
-                    </>
-                )}
+                <div className="flex justify-between pt-8">
+                    <button
+                        type="button"
+                        onClick={prevStep}
+                        className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 transition duration-200 flex items-center space-x-2 font-medium"
+                    >
+                        <FaArrowLeft className="w-4 h-4" />
+                        <span>Précédent</span>
+                    </button>
+                    <button
+                        type="submit"
+                        disabled={processing}
+                        className="px-8 py-3 bg-[#26658C] text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-[#26658C] transition duration-200 flex items-center space-x-2 font-medium shadow-lg"
+                    >
+                        {processing ? (
+                            <>
+                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                                <span>Soumission...</span>
+                            </>
+                        ) : (
+                            <>
+                                <FaPaperPlane className="w-5 h-5" />
+                                <span className="text-lg">Soumettre la Demande</span>
+                            </>
+                        )}
             </button>
         </div>
     </div>

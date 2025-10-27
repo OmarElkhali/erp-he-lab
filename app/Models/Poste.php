@@ -11,7 +11,7 @@ class Poste extends Model
 
     protected $fillable = [
         'demande_id', 'site_id', 'nom_poste', 'zone_activite', 'description',
-        'personnes_exposees', 'duree_shift', 'duree_exposition_quotidienne', 'nb_shifts'
+        'personnes_exposees', 'duree_shift', 'duree_exposition_quotidienne', 'nb_shifts','produit'
     ];
 
     public function demande()
