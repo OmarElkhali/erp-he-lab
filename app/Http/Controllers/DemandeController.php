@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\Notification;
 use App\Models\Matrice;
 use App\Models\Composant;
+use App\Models\Ville;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
@@ -253,18 +254,22 @@ public function edit(Demande $demande)
 
     $demande->load([
         'entreprise',
-        'site',
+        'site.ville', // Charger la ville du site
         'postes.composants'
     ]);
 
     $matrices = Matrice::all();
+    $villes = Ville::all(); // Charger toutes les villes
 
     return Inertia::render('User/Chiffrage/Edit', [
         'demande' => $demande,
         'matrices' => $matrices,
+        'villes' => $villes, // Passer les villes au frontend
         'auth' => ['user' => auth()->user()]
     ]);
 }
+
+
 public function update(Request $request, Demande $demande)
 {
     // Vérifier que la demande peut être modifiée
@@ -291,7 +296,7 @@ public function update(Request $request, Demande $demande)
             ]
         );
 
-        // 2. Mettre à jour les sites
+        // 2. Mettre à jour les sites AVEC ville_id
         $siteIds = [];
         foreach ($request->sites as $siteData) {
             $site = Site::updateOrCreate(
@@ -300,7 +305,7 @@ public function update(Request $request, Demande $demande)
                     'nom_site' => $siteData['nom_site']
                 ],
                 [
-                    'ville_id' => $siteData['ville_id'],
+                    'ville_id' => $siteData['ville_id'], // Utiliser ville_id
                     'code_site' => $siteData['code_site'] ?? null,
                 ]
             );
@@ -331,7 +336,7 @@ public function update(Request $request, Demande $demande)
                 'duree_shift' => $posteData['duree_shift'],
                 'duree_exposition_quotidienne' => $posteData['duree_exposition_quotidienne'],
                 'nb_shifts' => $posteData['nb_shifts'],
-                'produit' => $posteData['produit'] ?? '',
+                'produit' => $posteData['produit'] ?? '', // Ajouter le produit
             ]);
 
             // Attacher les composants
