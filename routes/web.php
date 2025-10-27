@@ -15,14 +15,18 @@ use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
-Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
-    ]);
+ Route::get('/', function () {
+    return redirect()->route('login');
 });
+
+// Route::get('/', function () {
+//     return Inertia::render('Welcome', [
+//         'canLogin' => Route::has('login'),
+//         'canRegister' => Route::has('register'),
+//         'laravelVersion' => Application::VERSION,
+//         'phpVersion' => PHP_VERSION,
+//     ]);
+// });
 
 // ========== ROUTES API ACCESSIBLES SANS AUTH (DOIT ÊTRE EN DEHORS DU GROUPE AUTH) ==========
 
