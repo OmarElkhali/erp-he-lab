@@ -99,6 +99,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('/demandes/{demande}', [DemandeController::class, 'update'])->name('demandes.update');
         Route::delete('/demandes/{demande}', [DemandeController::class, 'destroy'])->name('demandes.destroy');
         Route::get('/api/demandes/{demande}/cout', [ChiffrageController::class, 'getCoutDemande']);
+        Route::get('/api/demandes/{demande}/cout', [ChiffrageController::class, 'getCoutDemande']);
+        Route::get('/api/demandes/{demande}/cout-sans-deplacement', [ChiffrageController::class, 'getCoutSansDeplacement']);
         
         // Chiffrage (redirections)
         Route::get('User/Chiffrage/Nouveau', function (Request $request) {

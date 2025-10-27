@@ -144,106 +144,37 @@ public function store(Request $request)
 }
 
 public function historiqueMatrice($matrice_id)
-    {
-        $matrice = Matrice::findOrFail($matrice_id);
-        
-        $demandes = Demande::with([
-            'entreprise',
-            'site', 
-            'site.ville',
-            'postes.composants.famille' // Charger les postes avec leurs composants et familles
-        ])
-        ->where('matrice_id', $matrice_id)
-        ->orderBy('created_at', 'desc')
-        ->get();
-
-        // Calculer le coût total pour chaque demande
-       $chiffrageController = new ChiffrageController();
-        foreach ($demandes as $demande) {
-            $demande->cout_total = $chiffrageController->calculerCoutTotal($demande)['total'];
-        }
-
-        return Inertia::render('User/Chiffrage/Historique', [
-            'demandes' => $demandes,
-            'matrice' => $matrice
-        ]);
-    }
-    public function accepterDemande(Demande $demande)
-    {
-        DB::beginTransaction();
-        
-        try {
-            // Vérifier que la demande a bien un user_id
-            if (!$demande->user_id) {
-                throw new \Exception('Cette demande n\'a pas d\'utilisateur associé');
-            }
-
-            // Mettre à jour le statut de la demande
-            $demande->update(['statut' => 'acceptee']);
-
-            // Envoyer une notification à l'utilisateur
-            Notification::create([
-                'user_id' => $demande->user_id,
-                'type' => 'demande_acceptee',
-                'data' => [
-                    'demande_id' => $demande->id,
-                    'code_affaire' => $demande->code_affaire,
-                    'entreprise' => $demande->entreprise->nom,
-                    'matrice' => $demande->matrice->label,
-                    'date_acceptation' => now(),
-                    'admin_name' => auth()->user()->nom . ' ' . auth()->user()->prenom,
-                ],
-                'is_read' => false,
-                'is_accepted' => true
-            ]);
-
-            DB::commit();
-
-            return response()->json(['message' => 'Demande acceptée avec succès']);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json(['error' => 'Erreur: ' . $e->getMessage()], 500);
-        }
-    }
-
-    public function refuserDemande(Demande $demande)
 {
-    DB::beginTransaction();
+    $matrice = Matrice::findOrFail($matrice_id);
     
-    try {
-        // Vérifier que la demande a bien un user_id
-        if (!$demande->user_id) {
-            throw new \Exception('Cette demande n\'a pas d\'utilisateur associé');
+    $demandes = Demande::with([
+        'entreprise',
+        'site', 
+        'postes.composants.famille'
+    ])
+    ->where('matrice_id', $matrice_id)
+    ->orderBy('created_at', 'desc')
+    ->get();
+
+    // Calculer le coût total pour chaque demande
+    $chiffrageController = new ChiffrageController();
+    
+    $demandes->each(function ($demande) use ($chiffrageController) {
+        $resultatCout = $chiffrageController->calculerCoutTotal($demande);
+        $demande->cout_total_avec_deplacement = $resultatCout['total_avec_deplacement'];
+        $demande->cout_total_sans_deplacement = $resultatCout['total_sans_deplacement'];
+        $demande->detail_cout = $resultatCout['detail'];
+        
+        // 🔹 CORRECTION : S'assurer que ville est une chaîne
+        if (is_object($demande->site->ville)) {
+            $demande->site->ville = $demande->site->ville->nom ?? 'Ville inconnue';
         }
+    });
 
-        // Mettre à jour le statut de la demande
-        $demande->update(['statut' => 'refusee']);
-
-        // Envoyer une notification à l'utilisateur
-        Notification::create([
-            'user_id' => $demande->user_id,
-            'type' => 'demande_refusee',
-            'data' => [
-                'demande_id' => $demande->id,
-                'code_affaire' => $demande->code_affaire,
-                'entreprise' => $demande->entreprise->nom,
-                'matrice' => $demande->matrice->label,
-                'date_refus' => now(),
-                'admin_name' => auth()->user()->nom . ' ' . auth()->user()->prenom,
-            ],
-            'is_read' => false,
-            'is_accepted' => false
-        ]);
-
-        DB::commit();
-
-        return response()->json(['message' => 'Demande refusée']);
-
-    } catch (\Exception $e) {
-        DB::rollBack();
-        return response()->json(['error' => 'Erreur: ' . $e->getMessage()], 500);
-    }
+    return Inertia::render('User/Chiffrage/Historique', [
+        'demandes' => $demandes,
+        'matrice' => $matrice
+    ]);
 }
 public function edit(Demande $demande)
 {

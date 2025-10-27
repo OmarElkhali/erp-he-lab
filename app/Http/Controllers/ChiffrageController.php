@@ -21,7 +21,7 @@ class ChiffrageController extends Controller
         $totalPostes = 0;
         $detailPostes = [];
         
-        // 🔹 NOUVEAU : Regrouper toutes les familles UNIQUES de tous les postes
+        // Regrouper toutes les familles UNIQUES de tous les postes
         $famillesUniques = collect();
         $composantsParFamille = collect();
 
@@ -43,7 +43,7 @@ class ChiffrageController extends Controller
             }
         }
 
-        // 🔹 CALCUL DES COÛTS PAR FAMILLE (UNIQUES)
+        // CALCUL DES COÛTS PAR FAMILLE (UNIQUES)
         $coutParFamille = [];
         $C1_total = 0;
         $C2_total = 0;
@@ -75,7 +75,7 @@ class ChiffrageController extends Controller
                         'cas_number' => $composant->cas_number,
                         'cout_analyse' => $composant->cout_analyse
                     ];
-                })->unique('nom')->values() // Éviter les doublons
+                })->unique('nom')->values()
             ];
             
             $C1_total += $C1_famille;
@@ -83,7 +83,7 @@ class ChiffrageController extends Controller
             $C3_total += $C3_famille;
         }
 
-        // 🔹 DEUXIÈME PASSE : Répartir les coûts par poste pour l'affichage
+        // DEUXIÈME PASSE : Répartir les coûts par poste pour l'affichage
         foreach ($demande->postes as $posteIndex => $poste) {
             $coutPoste = 0;
             $detailFamilles = [];
@@ -104,8 +104,8 @@ class ChiffrageController extends Controller
 
                     $detailFamilles[] = [
                         'famille' => $familleData['famille']->libelle,
-                        'C1' => $familleData['C1'] * ($ratio > 0 ? 1 : 0), // C1 apparaît dans chaque poste mais n'est compté qu'une fois au total
-                        'C2' => $familleData['C2'] * ($ratio > 0 ? 1 : 0), // C2 apparaît dans chaque poste mais n'est compté qu'une fois au total
+                        'C1' => $familleData['C1'] * ($ratio > 0 ? 1 : 0),
+                        'C2' => $familleData['C2'] * ($ratio > 0 ? 1 : 0),
                         'C3' => $C3_poste,
                         'total_famille' => $coutFamillePoste,
                         'composants' => $composantsFamillePoste->map(function($composant) {
@@ -115,8 +115,7 @@ class ChiffrageController extends Controller
                                 'cout_analyse' => $composant->cout_analyse
                             ];
                         }),
-                        'ratio' => $ratio,
-                        'produit' => $poste->produit
+                        'ratio' => $ratio
                     ];
                 }
             }
@@ -124,20 +123,22 @@ class ChiffrageController extends Controller
             $totalPostes += $coutPoste;
             $detailPostes[] = [
                 'poste' => $poste->nom_poste,
-                'produit' => $poste->produit,
                 'total_poste' => $coutPoste,
                 'familles' => $detailFamilles
             ];
         }
 
-        // 🔹 AJOUTER les coûts C1 et C2 UNIQUES au total des postes
+        // AJOUTER les coûts C1 et C2 UNIQUES au total des postes
         $totalPostes += $C1_total + $C2_total;
 
-        // Calcul du prix total selon la formule
-        $prixTotal = $C4 + $C5 + $totalPostes + $C6;
+        // 🔹 NOUVELLE FONCTIONNALITÉ : Calcul avec et sans déplacement
+        $prixTotalAvecDeplacement = $C4 + $C5 + $totalPostes + $C6;
+        $prixTotalSansDeplacement = $C4 + $C5 + $totalPostes; // Sans C6
         
-        return [
-            'total' => $prixTotal,
+        return  [
+            'total' => $prixTotalAvecDeplacement, // 🔹 CHANGEMENT ICI
+            'total_avec_deplacement' => $prixTotalAvecDeplacement,
+            'total_sans_deplacement' => $prixTotalSansDeplacement,
             'detail' => [
                 'C1_total' => $C1_total,
                 'C2_total' => $C2_total,
@@ -147,7 +148,7 @@ class ChiffrageController extends Controller
                 'C6' => $C6,
                 'total_postes' => $totalPostes,
                 'detail_postes' => $detailPostes,
-                'familles_uniques' => $famillesUniques->count() // Pour information
+                'familles_uniques' => $famillesUniques->count()
             ],
             'regles_appliquees' => [
                 'C1' => '700 MAD par famille unique (même si présente dans plusieurs postes)',
@@ -158,11 +159,30 @@ class ChiffrageController extends Controller
                 'C6' => 'Frais de déplacement du site'
             ]
         ];
+        
+    }
+
+    // 🔹 NOUVELLE FONCTION : Calcul uniquement sans déplacement
+    public function calculerCoutSansDeplacement(Demande $demande)
+    {
+        $resultat = $this->calculerCoutTotal($demande);
+        return $resultat['total_sans_deplacement'];
     }
 
     public function getCoutDemande($demandeId)
     {
         $demande = Demande::with(['site', 'postes.composants.famille'])->findOrFail($demandeId);
         return response()->json($this->calculerCoutTotal($demande));
+    }
+
+    // 🔹 NOUVELLE FONCTION : Récupérer uniquement le coût sans déplacement
+    public function getCoutSansDeplacement($demandeId)
+    {
+        $demande = Demande::with(['site', 'postes.composants.famille'])->findOrFail($demandeId);
+        $coutSansDeplacement = $this->calculerCoutSansDeplacement($demande);
+        
+        return response()->json([
+            'total_sans_deplacement' => $coutSansDeplacement
+        ]);
     }
 }

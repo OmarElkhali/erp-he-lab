@@ -18,6 +18,23 @@ export default function Historique({ auth, demandes, matrice }) {
     return <span className={`px-2 py-1 rounded-full text-xs font-medium ${config.color}`}>{config.label}</span>;
   };
 
+  // 🔹 FONCTION POUR OBTENIR LE NOM DE LA VILLE EN TOUTE SÉCURITÉ
+  const getVilleName = (site) => {
+    if (!site || !site.ville) return 'Ville non spécifiée';
+    
+    if (typeof site.ville === 'object') {
+      return site.ville.nom || 'Ville non spécifiée';
+    }
+    
+    return site.ville;
+  };
+
+  // 🔹 FONCTION POUR FORMATTER LES MONTANTS EN TOUTE SÉCURITÉ
+  const formatMontant = (montant) => {
+    if (!montant && montant !== 0) return '0';
+    return typeof montant === 'number' ? montant.toLocaleString('fr-FR') : '0';
+  };
+
   const handleDelete = async (demandeId, codeAffaire) => {
     const result = await Swal.fire({
       title: 'Êtes-vous sûr?',
@@ -72,10 +89,8 @@ export default function Historique({ auth, demandes, matrice }) {
       color: '#333'
     }).then((result) => {
       if (result.isConfirmed) {
-        // Logique de téléchargement du devis
         console.log('Télécharger le devis pour:', demande.code_affaire);
         
-        // Simulation du téléchargement
         Swal.fire({
           title: 'Téléchargement réussi!',
           text: 'Le devis a été généré avec succès.',
@@ -114,7 +129,6 @@ export default function Historique({ auth, demandes, matrice }) {
       }
     }).then((result) => {
       if (result.isConfirmed) {
-        // Logique d'upload du devis
         console.log('Uploader le devis pour:', demande.code_affaire, 'Fichier:', result.value);
         
         Swal.fire({
@@ -179,6 +193,9 @@ export default function Historique({ auth, demandes, matrice }) {
                     Coût Total
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Coût sans Déplacement
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Statut
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -198,12 +215,14 @@ export default function Historique({ auth, demandes, matrice }) {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">{demande.site.nom_site}</div>
-                       <div className="text-sm text-gray-500">
-                        {demande.site.ville?.nom || 'Ville non spécifiée'}
+                      <div className="text-sm text-gray-500">
+                        {/* 🔹 CORRECTION : Utiliser la fonction helper */}
+                        {getVilleName(demande.site)}
                       </div>
                       {demande.site.code_site && (
                         <div className="text-xs text-gray-400">Code: {demande.site.code_site}</div>
                       )}
+                      
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {new Date(demande.date_creation).toLocaleDateString('fr-FR')}
@@ -221,21 +240,34 @@ export default function Historique({ auth, demandes, matrice }) {
                         {demande.postes?.map(p => p.nom_poste).join(', ')}
                       </div>
                     </td>
+                    
+                    {/* Colonne Coût Total AVEC déplacement */}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-semibold text-green-600">
-                        {demande.cout_total?.toLocaleString('fr-FR')} MAD
+                        {formatMontant(demande.cout_total_avec_deplacement)} MAD
                       </div>
                       <div className="text-xs text-gray-500">
-                        Devis
+                        Avec déplacement
                       </div>
                     </td>
+                    
+                    {/* Colonne Coût Total SANS déplacement */}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-semibold text-blue-600">
+                        {formatMontant(demande.cout_total_sans_deplacement)} MAD
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        Sans déplacement
+                      </div>
+                      
+                    </td>
+                    
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getStatusBadge(demande.statut)}
                     </td>
 
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center space-x-4">
-                        {/* Icône Voir - Toujours visible */}
                         <Link
                           href={route('demandes.show', demande.id)}
                           className="text-[#26658C] hover:text-blue-800 transition duration-150 transform hover:scale-110"
@@ -244,7 +276,6 @@ export default function Historique({ auth, demandes, matrice }) {
                           <FaEye className="w-5 h-5" />
                         </Link>
 
-                        {/* Icône Modifier - seulement si en attente ou refusée */}
                         {(demande.statut === 'en_attente' || demande.statut === 'refusee') && (
                           <Link
                             href={route('demandes.edit', demande.id)}
@@ -255,7 +286,6 @@ export default function Historique({ auth, demandes, matrice }) {
                           </Link>
                         )}
 
-                        {/* Icône Télécharger devis - seulement si acceptée */}
                         {demande.statut === 'acceptee' && (
                           <button
                             onClick={() => handleDownloadDevis(demande)}
@@ -266,11 +296,9 @@ export default function Historique({ auth, demandes, matrice }) {
                           </button>
                         )}
 
-                        {/* Icône PDF - seulement si acceptée */}
                         {demande.statut === 'acceptee' && (
                           <button
                             onClick={() => {
-                              // Logique de génération PDF
                               console.log('Générer PDF pour:', demande.code_affaire);
                               Swal.fire({
                                 title: 'PDF Généré!',
@@ -286,7 +314,6 @@ export default function Historique({ auth, demandes, matrice }) {
                           </button>
                         )}
 
-                        {/* Icône Upload devis - pour admin seulement si acceptée */}
                         {auth.user.role === 'admin' && demande.statut === 'acceptee' && (
                           <button
                             onClick={() => handleUploadDevis(demande)}
@@ -297,7 +324,6 @@ export default function Historique({ auth, demandes, matrice }) {
                           </button>
                         )}
 
-                        {/* Icône Supprimer - seulement si en attente */}
                         {demande.statut === 'en_attente' && (
                           <button
                             onClick={() => handleDelete(demande.id, demande.code_affaire)}
