@@ -20,6 +20,7 @@ class ChiffrageController extends Controller
 
         $totalPostes = 0;
         $detailPostes = [];
+        $totalFamilles = 0;
 
         foreach ($demande->postes as $posteIndex => $poste) {
             // Regrouper les composants par famille
@@ -42,13 +43,15 @@ class ChiffrageController extends Controller
                 
                 $coutFamille = $C1_famille + $C2_famille + $C3_famille;
                 $coutPoste += $coutFamille;
+                $totalFamilles++;
 
                 $detailFamilles[] = [
                     'famille' => $famille->libelle,
                     'C1' => $C1_famille,
                     'C2' => $C2_famille,
                     'C3' => $C3_famille,
-                    'total_famille' => $coutFamille
+                    'total_famille' => $coutFamille,
+                    'composants_count' => $composantsFamille->count()
                 ];
             }
             
@@ -66,9 +69,7 @@ class ChiffrageController extends Controller
         return [
             'total' => $prixTotal,
             'detail' => [
-                'C1_total' => $C1 * collect($detailPostes)->sum(function($poste) {
-                    return count($poste['familles']);
-                }), // Total C1 pour toutes les familles
+                'C1_total' => $C1 * $totalFamilles,
                 'C2_total' => collect($detailPostes)->sum(function($poste) {
                     return collect($poste['familles'])->sum('C2');
                 }),
@@ -79,14 +80,16 @@ class ChiffrageController extends Controller
                 'C5' => $C5,
                 'C6' => $C6,
                 'total_postes' => $totalPostes,
-                'detail_postes' => $detailPostes
+                'total_familles' => $totalFamilles,
+                'detail_postes' => $detailPostes,
+                'formule' => 'Prix Total = C4 + C5 + Σ[(C1 + C2 + C3) pour chaque famille dans chaque poste] + C6'
             ]
         ];
     }
 
     public function getCoutDemande($demandeId)
     {
-        $demande = Demande::with(['site', 'postes.composants.famille'])->findOrFail($demandeId);
+        $demande = Demande::with(['site.ville', 'postes.composants.famille'])->findOrFail($demandeId);
         return response()->json($this->calculerCoutTotal($demande));
     }
 }
