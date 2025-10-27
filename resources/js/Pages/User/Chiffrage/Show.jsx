@@ -112,7 +112,7 @@ export default function Show({ auth, demande }) {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">Ville</label>
-              <p className="mt-1 text-sm text-gray-900">{demande.site.ville}</p>
+              <p className="mt-1 text-sm text-gray-900">{demande.site.ville.nom}</p>
             </div>
             {demande.site.code_site && (
               <div>

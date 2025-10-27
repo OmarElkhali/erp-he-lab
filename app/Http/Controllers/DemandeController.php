@@ -405,12 +405,15 @@ public function destroy(Demande $demande)
         $demande->load([
             'entreprise',
             'matrice', 
+            'site.ville', // ✅ CHANGER ICI - charger la relation ville
+            'postes.composants.famille', // Optionnel: charger aussi les familles des composants
             'site',
             'postes.composants'
         ]);
 
         return Inertia::render('User/Chiffrage/Show', [
-            'demande' => $demande
+            'demande' => $demande,
+            'auth' => ['user' => auth()->user()]
         ]);
     }
 
