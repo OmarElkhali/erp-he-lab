@@ -123,6 +123,7 @@ class ChiffrageController extends Controller
             $totalPostes += $coutPoste;
             $detailPostes[] = [
                 'poste' => $poste->nom_poste,
+                'produit' => $poste->produit, 
                 'total_poste' => $coutPoste,
                 'familles' => $detailFamilles
             ];
