@@ -1,7 +1,7 @@
 // resources/js/Pages/User/Chiffrage/Historique.jsx
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router } from '@inertiajs/react';
-import { FaEdit, FaTrash, FaEye, FaDownload, FaFilePdf, FaUpload } from 'react-icons/fa';
+import { FaEdit, FaTrash, FaEye, FaDownload, FaFilePdf, FaUpload,FaFileAlt} from 'react-icons/fa';
 import Swal from 'sweetalert2';
 
 export default function Historique({ auth, demandes, matrice }) {
@@ -157,7 +157,9 @@ export default function Historique({ auth, demandes, matrice }) {
       <div className="bg-white rounded-lg shadow overflow-hidden">
         {demandes.length === 0 ? (
           <div className="text-center py-12">
-            <div className="text-gray-400 text-6xl mb-4">📊</div>
+            <div className="text-gray-400 mb-4">
+              <FaFileAlt className="w-16 h-16 mx-auto opacity-50" />
+            </div>
             <p className="text-gray-500 text-lg mb-2">Aucune demande trouvée pour cette matrice.</p>
             <Link
               href={route('demandes.create', { matrice_id: matrice?.id })}
