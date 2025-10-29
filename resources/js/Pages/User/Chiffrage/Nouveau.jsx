@@ -19,43 +19,41 @@ function PosteComposants({ poste, index, siteIndex, toggleComposant, updatePoste
     // 🔹 État pour le produit
     const [produit, setProduit] = useState(poste.produit || '');
 
-    // 🔹 Charger les composants
+    // 🔹 CORRECTION : Charger TOUS les composants au départ
     useEffect(() => {
-        const delayDebounceFn = setTimeout(() => {
-            if (searchNom.length >= 2 || searchCas.length >= 2 || (searchNom.length === 0 && searchCas.length === 0)) {
-                setLoading(true);
-                axios.get('/api/composants', { 
-                    params: { 
-                        search: searchNom || searchCas,
-                        search_type: searchNom ? 'nom' : 'cas'
-                    } 
-                })
-                .then(res => {
-                    setComposants(res.data);
-                    setLoading(false);
-                })
-                .catch(error => {
-                    console.error('Erreur chargement composants:', error);
-                    setComposants([]);
-                    setLoading(false);
-                });
-            }
-        }, 300);
+        setLoading(true);
+        axios.get('/api/composants')
+            .then(res => {
+                setComposants(res.data);
+                setLoading(false);
+            })
+            .catch(error => {
+                console.error('Erreur chargement composants:', error);
+                setComposants([]);
+                setLoading(false);
+            });
+    }, []); // 🔹 Charger une seule fois au montage
 
-        return () => clearTimeout(delayDebounceFn);
-    }, [searchNom, searchCas]);
+    // 🔹 CORRECTION : Filtrer les options en fonction de la recherche
+    const nomOptions = composants
+        .filter(c => 
+            searchNom === '' || 
+            c.nom.toLowerCase().includes(searchNom.toLowerCase())
+        )
+        .map(c => ({
+            value: c.id,
+            label: c.nom,
+            nom: c.nom,
+            cas: c.cas_number
+        }));
 
-    // 🔹 Options pour le select par nom
-    const nomOptions = composants.map(c => ({
-        value: c.id,
-        label: c.nom,
-        nom: c.nom,
-        cas: c.cas_number
-    }));
-
-    // 🔹 Options pour le select par CAS
     const casOptions = composants
-        .filter(c => c.cas_number)
+        .filter(c => 
+            c.cas_number && (
+                searchCas === '' || 
+                c.cas_number.includes(searchCas)
+            )
+        )
         .map(c => ({
             value: c.id,
             label: c.cas_number,
@@ -68,12 +66,20 @@ function PosteComposants({ poste, index, siteIndex, toggleComposant, updatePoste
         const selectedIds = selected ? selected.map(s => s.value) : [];
         setSelectedNom(selected || []);
         
-        const correspondingCas = selected ? selected.map(s => 
-            casOptions.find(cas => cas.value === s.value)
-        ).filter(Boolean) : [];
+        // 🔹 CORRECTION : Synchroniser avec les options CAS
+        const correspondingCas = selected ? selected.map(s => {
+            const composant = composants.find(c => c.id === s.value);
+            return composant && composant.cas_number ? {
+                value: composant.id,
+                label: composant.cas_number,
+                nom: composant.nom,
+                cas: composant.cas_number
+            } : null;
+        }).filter(Boolean) : [];
+        
         setSelectedCas(correspondingCas);
         
-        // Inclure siteIndex dans l'appel
+        // Mettre à jour les composants du poste
         toggleComposant(siteIndex, index, selectedIds, produit);
     };
 
@@ -82,10 +88,17 @@ function PosteComposants({ poste, index, siteIndex, toggleComposant, updatePoste
         const selectedIds = selected ? selected.map(s => s.value) : [];
         setSelectedCas(selected || []);
         
-        // Synchroniser le select nom
-        const correspondingNoms = selected ? selected.map(s => 
-            nomOptions.find(nom => nom.value === s.value)
-        ).filter(Boolean) : [];
+        // 🔹 CORRECTION : Synchroniser avec les options NOM
+        const correspondingNoms = selected ? selected.map(s => {
+            const composant = composants.find(c => c.id === s.value);
+            return composant ? {
+                value: composant.id,
+                label: composant.nom,
+                nom: composant.nom,
+                cas: composant.cas_number
+            } : null;
+        }).filter(Boolean) : [];
+        
         setSelectedNom(correspondingNoms);
         
         // Mettre à jour les composants du poste
@@ -109,17 +122,33 @@ function PosteComposants({ poste, index, siteIndex, toggleComposant, updatePoste
         updatePoste(siteIndex, index, 'description', e.target.value);
     };
 
-    // 🔹 Initialiser les selects avec les valeurs existantes
+    // 🔹 CORRECTION : Initialiser les selects avec les valeurs existantes
     useEffect(() => {
-        if (composants.length > 0 && poste.composants.length > 0) {
-            const initialSelected = nomOptions.filter(option => 
-                poste.composants.includes(option.value)
-            );
+        if (composants.length > 0 && poste.composants && poste.composants.length > 0) {
+            // Récupérer les composants sélectionnés depuis la base de données
+            const initialSelected = composants
+                .filter(composant => poste.composants.includes(composant.id))
+                .map(composant => ({
+                    value: composant.id,
+                    label: composant.nom,
+                    nom: composant.nom,
+                    cas: composant.cas_number
+                }));
+            
             setSelectedNom(initialSelected);
             
-            const initialCasSelected = casOptions.filter(option => 
-                poste.composants.includes(option.value)
-            );
+            // Récupérer les options CAS correspondantes
+            const initialCasSelected = composants
+                .filter(composant => 
+                    poste.composants.includes(composant.id) && composant.cas_number
+                )
+                .map(composant => ({
+                    value: composant.id,
+                    label: composant.cas_number,
+                    nom: composant.nom,
+                    cas: composant.cas_number
+                }));
+            
             setSelectedCas(initialCasSelected);
         }
         
@@ -128,6 +157,30 @@ function PosteComposants({ poste, index, siteIndex, toggleComposant, updatePoste
             setProduit(poste.produit);
         }
     }, [composants, poste.composants, poste.produit]);
+
+    // 🔹 CORRECTION : Fonction pour formater les options
+    const formatOptionLabel = ({ nom, cas }, { context }) => {
+        if (context === 'menu') {
+            return (
+                <div className="flex flex-col py-1">
+                    <span className="font-medium text-sm">{nom}</span>
+                    {cas && (
+                        <span className="text-xs text-gray-500">CAS: {cas}</span>
+                    )}
+                </div>
+            );
+        }
+        
+        // Format pour les valeurs sélectionnées
+        return (
+            <div className="flex flex-col">
+                <span className="font-medium text-sm">{nom}</span>
+                {cas && (
+                    <span className="text-xs text-gray-500">CAS: {cas}</span>
+                )}
+            </div>
+        );
+    };
 
     return (
         <div className="space-y-4">
@@ -180,14 +233,10 @@ function PosteComposants({ poste, index, siteIndex, toggleComposant, updatePoste
                     loadingMessage={() => "Chargement..."}
                     className="react-select-container mb-3"
                     classNamePrefix="react-select"
-                    formatOptionLabel={({ nom, cas }) => (
-                        <div className="flex flex-col">
-                            <span className="font-medium">{nom}</span>
-                            {cas && (
-                                <span className="text-xs text-gray-500">CAS: {cas}</span>
-                            )}
-                        </div>
-                    )}
+                    formatOptionLabel={formatOptionLabel}
+                    // 🔹 CORRECTION : Garder les options ouvertes pendant la recherche
+                    closeMenuOnSelect={false}
+                    blurInputOnSelect={false}
                 />
             </div>
 
@@ -210,14 +259,31 @@ function PosteComposants({ poste, index, siteIndex, toggleComposant, updatePoste
                     loadingMessage={() => "Chargement..."}
                     className="react-select-container"
                     classNamePrefix="react-select"
-                    formatOptionLabel={({ nom, cas }) => (
-                        <div className="flex flex-col">
-                            <span className="font-medium">{cas}</span>
-                            <span className="text-xs text-gray-500">Nom: {nom}</span>
-                        </div>
-                    )}
+                    formatOptionLabel={formatOptionLabel}
+                    // 🔹 CORRECTION : Garder les options ouvertes pendant la recherche
+                    closeMenuOnSelect={false}
+                    blurInputOnSelect={false}
                 />
             </div>
+
+            {/* 🔹 AFFICHER LES COMPOSANTS SÉLECTIONNÉS */}
+            {selectedNom.length > 0 && (
+                <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                    <h4 className="text-sm font-medium text-blue-800 mb-2">
+                        Composants sélectionnés ({selectedNom.length})
+                    </h4>
+                    <div className="space-y-1">
+                        {selectedNom.map((composant, idx) => (
+                            <div key={idx} className="flex justify-between items-center text-sm bg-white p-2 rounded border">
+                                <span className="font-medium">{composant.nom}</span>
+                                {composant.cas && (
+                                    <span className="text-gray-500 text-xs">CAS: {composant.cas}</span>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
