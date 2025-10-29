@@ -86,6 +86,12 @@ export default function Show({ auth, demande }) {
     return tousLesPostes;
   };
 
+  // 🔹 FONCTION POUR OBTENIR LA ZONE D'ACTIVITÉ D'UN POSTE
+  const getZoneActivite = (posteNom, tousLesPostes) => {
+    const poste = tousLesPostes.find(p => p.nom_poste === posteNom);
+    return poste ? poste.zone_activite : 'Zone non spécifiée';
+  };
+
   return (
     <AuthenticatedLayout user={auth.user}>
       <Head title={`Détails - ${demande.code_affaire}`} />
@@ -198,8 +204,6 @@ export default function Show({ auth, demande }) {
               <FaCalculator className="text-[#26658C] w-5 h-5" />
               <h2 className="text-lg font-semibold text-gray-900">Détail du Devis</h2>
             </div>
-            
-           
           </div>
 
           {/* Tableau Coûts Fixes */}
@@ -217,24 +221,24 @@ export default function Show({ auth, demande }) {
                 <tr className="bg-white">
                   <td className="border border-gray-300 px-4 py-2 font-medium">Rapport (C4)</td>
                   <td className="border border-gray-300 px-4 py-2 text-right font-semibold text-[#26658C]">
-                    {formatCurrency(coutDetails.detail.C4)}
+                    {formatCurrency(coutDetails.detail.C4_rapport || 200)}
                   </td>
                   <td className="border border-gray-300 px-4 py-2 text-gray-600">Coût fixe par affaire</td>
                 </tr>
                 <tr className="bg-gray-50">
                   <td className="border border-gray-300 px-4 py-2 font-medium">Logistique (C5)</td>
                   <td className="border border-gray-300 px-4 py-2 text-right font-semibold text-[#26658C]">
-                    {formatCurrency(coutDetails.detail.C5)}
+                    {formatCurrency(coutDetails.detail.C5_logistique || 300)}
                   </td>
                   <td className="border border-gray-300 px-4 py-2 text-gray-600">Coût fixe par dossier</td>
                 </tr>
                 <tr className="bg-white">
                   <td className="border border-gray-300 px-4 py-2 font-medium">Déplacement (C6)</td>
                   <td className="border border-gray-300 px-4 py-2 text-right font-semibold text-[#26658C]">
-                    {formatCurrency(coutDetails.detail.C6_total || 0)}
+                    {formatCurrency(coutDetails.detail.C6_deplacement_total || 0)}
                   </td>
                   <td className="border border-gray-300 px-4 py-2 text-gray-600">
-                    Frais de déplacement - {coutDetails.detail.sites_count || 0} site(s)
+                    Frais de déplacement - {coutDetails.detail.nombre_sites || 0} site(s)
                   </td>
                 </tr>
               </tbody>
@@ -242,24 +246,32 @@ export default function Show({ auth, demande }) {
           </div>
 
           {/* Détail des frais de déplacement par site */}
-          {coutDetails.detail.C6_sites && coutDetails.detail.C6_sites.length > 0 && (
+          {coutDetails.detail.C6_villes_uniques && coutDetails.detail.C6_villes_uniques.length > 0 && (
             <div className="mb-6 overflow-x-auto">
-              <h3 className="text-md font-semibold text-gray-900 mb-3">Détail des Frais de Déplacement par Site</h3>
+              <h3 className="text-md font-semibold text-gray-900 mb-3">Détail des Frais de Déplacement par Ville</h3>
               <table className="w-full border-collapse text-sm">
                 <thead>
                   <tr className="bg-gray-200 text-gray-700">
-                    <th className="border border-gray-300 px-4 py-2 text-left">Site</th>
                     <th className="border border-gray-300 px-4 py-2 text-left">Ville</th>
+                    <th className="border border-gray-300 px-4 py-2 text-left">Sites</th>
                     <th className="border border-gray-300 px-4 py-2 text-right">Frais de Déplacement</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {coutDetails.detail.C6_sites.map((site, index) => (
+                  {coutDetails.detail.C6_villes_uniques.map((ville, index) => (
                     <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                      <td className="border border-gray-300 px-4 py-2">{site.nom_site}</td>
-                      <td className="border border-gray-300 px-4 py-2">{site.ville}</td>
+                      <td className="border border-gray-300 px-4 py-2 font-medium">{ville.ville}</td>
+                      <td className="border border-gray-300 px-4 py-2">
+                        {ville.sites && ville.sites.length > 0 ? (
+                          <div className="text-xs">
+                            {ville.sites.map((site, idx) => (
+                              <div key={idx}>• {site}</div>
+                            ))}
+                          </div>
+                        ) : '-'}
+                      </td>
                       <td className="border border-gray-300 px-4 py-2 text-right font-semibold text-[#26658C]">
-                        {formatCurrency(site.frais_deplacement)}
+                        {formatCurrency(ville.frais_deplacement)}
                       </td>
                     </tr>
                   ))}
@@ -268,7 +280,7 @@ export default function Show({ auth, demande }) {
             </div>
           )}
 
-          {/* Tableau Détail par Poste */}
+          {/* Tableau Détail par Poste - AVEC COLONNE ZONE */}
           <div className="mb-6 overflow-x-auto">
             <h3 className="text-md font-semibold text-gray-900 mb-3">
               Détail par Poste ({coutDetails.detail.detail_postes?.length || 0} poste(s))
@@ -279,6 +291,7 @@ export default function Show({ auth, demande }) {
                 <thead>
                   <tr className="bg-[#26658C] text-white">
                     <th className="border border-gray-300 px-4 py-2 text-left whitespace-nowrap">Poste</th>
+                    <th className="border border-gray-300 px-4 py-2 text-left whitespace-nowrap">Zone</th>
                     <th className="border border-gray-300 px-4 py-2 text-left whitespace-nowrap">Site</th>
                     <th className="border border-gray-300 px-4 py-2 text-left whitespace-nowrap">Produit</th>
                     <th className="border border-gray-300 px-4 py-2 text-left whitespace-nowrap">Famille</th>
@@ -291,64 +304,90 @@ export default function Show({ auth, demande }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {coutDetails.detail.detail_postes.map((detailPoste, posteIndex) => (
-                    detailPoste.familles && detailPoste.familles.map((famille, familleIndex) => (
-                      <tr key={`${posteIndex}-${familleIndex}`} className={familleIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                        {familleIndex === 0 && (
-                          <>
-                            <td 
-                              className="border border-gray-300 px-4 py-2 font-medium align-top" 
-                              rowSpan={detailPoste.familles.length}
-                            >
-                              {detailPoste.poste}
-                            </td>
-                            <td 
-                              className="border border-gray-300 px-4 py-2 align-top" 
-                              rowSpan={detailPoste.familles.length}
-                            >
-                              {detailPoste.site || 'Site inconnu'}
-                            </td>
-                            <td 
-                              className="border border-gray-300 px-4 py-2 align-top" 
-                              rowSpan={detailPoste.familles.length}
-                            >
-                              {detailPoste.produit || '-'}
-                            </td>
-                          </>
-                        )}
-                        <td className="border border-gray-300 px-4 py-2">{famille.famille}</td>
-                        <td className="border border-gray-300 px-4 py-2">
-                          {famille.composants && famille.composants.length > 0 ? (
-                            <div className="space-y-1">
-                              {famille.composants.map((composant, compIndex) => (
-                                <div key={compIndex} className="text-xs">
-                                  <span className="font-medium">{composant.nom}</span>
-                                  {composant.cas_number && (
-                                    <span className="text-gray-500"> ({composant.cas_number})</span>
-                                  )}
-                                  <span className="text-[#26658C] ml-2">{formatCurrency(composant.cout_analyse)}</span>
+                  {coutDetails.detail.detail_postes.map((detailPoste, posteIndex) => {
+                    const tousLesPostes = getAllPostes();
+                    const zoneActivite = getZoneActivite(detailPoste.poste, tousLesPostes);
+                    
+                    return (
+                      detailPoste.familles && detailPoste.familles.map((famille, familleIndex) => (
+                        <tr key={`${posteIndex}-${familleIndex}`} className={familleIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                          {familleIndex === 0 && (
+                            <>
+                              <td 
+                                className="border border-gray-300 px-4 py-2 font-medium align-top" 
+                                rowSpan={detailPoste.familles.length}
+                              >
+                                {detailPoste.poste}
+                              </td>
+                              <td 
+                                className="border border-gray-300 px-4 py-2 align-top" 
+                                rowSpan={detailPoste.familles.length}
+                              >
+                                <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
+                                  {zoneActivite}
+                                </span>
+                              </td>
+                              <td 
+                                className="border border-gray-300 px-4 py-2 align-top" 
+                                rowSpan={detailPoste.familles.length}
+                              >
+                                <div className="text-xs">
+                                  <div className="font-medium">{detailPoste.site}</div>
+                                  <div className="text-gray-500">{detailPoste.ville}</div>
                                 </div>
-                              ))}
-                            </div>
-                          ) : '-'}
-                        </td>
-                        <td className="border border-gray-300 px-4 py-2 text-right">{formatCurrency(famille.C1 || 0)}</td>
-                        <td className="border border-gray-300 px-4 py-2 text-right">{formatCurrency(famille.C2 || 0)}</td>
-                        <td className="border border-gray-300 px-4 py-2 text-right">{formatCurrency(famille.C3 || 0)}</td>
-                        <td className="border border-gray-300 px-4 py-2 text-right font-semibold text-[#26658C]">
-                          {formatCurrency(famille.total_famille || 0)}
-                        </td>
-                        {familleIndex === 0 && (
-                          <td 
-                            className="border border-gray-300 px-4 py-2 text-right font-bold text-[#26658C] bg-blue-50 align-top" 
-                            rowSpan={detailPoste.familles.length}
-                          >
-                            {formatCurrency(detailPoste.total_poste || 0)}
+                              </td>
+                              <td 
+                                className="border border-gray-300 px-4 py-2 align-top" 
+                                rowSpan={detailPoste.familles.length}
+                              >
+                                {detailPoste.produit || '-'}
+                              </td>
+                            </>
+                          )}
+                          <td className="border border-gray-300 px-4 py-2">
+                            <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">
+                              {famille.famille}
+                            </span>
                           </td>
-                        )}
-                      </tr>
-                    ))
-                  ))}
+                          <td className="border border-gray-300 px-4 py-2">
+                            {famille.composants && famille.composants.length > 0 ? (
+                              <div className="space-y-1">
+                                {famille.composants.map((composant, compIndex) => (
+                                  <div key={compIndex} className="text-xs">
+                                    <span className="font-medium">{composant.nom}</span>
+                                    {composant.cas_number && (
+                                      <span className="text-gray-500"> ({composant.cas_number})</span>
+                                    )}
+                                    <span className="text-[#26658C] ml-2">{formatCurrency(composant.cout_analyse)}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : '-'}
+                          </td>
+                          <td className="border border-gray-300 px-4 py-2 text-right font-semibold">
+                            {formatCurrency(famille.C1 || 0)}
+                          </td>
+                          <td className="border border-gray-300 px-4 py-2 text-right font-semibold">
+                            {formatCurrency(famille.C2 || 0)}
+                          </td>
+                          <td className="border border-gray-300 px-4 py-2 text-right font-semibold">
+                            {formatCurrency(famille.C3 || 0)}
+                          </td>
+                          <td className="border border-gray-300 px-4 py-2 text-right font-semibold text-[#26658C]">
+                            {formatCurrency(famille.total_famille || 0)}
+                          </td>
+                          {familleIndex === 0 && (
+                            <td 
+                              className="border border-gray-300 px-4 py-2 text-right font-bold text-[#26658C] bg-blue-50 align-top" 
+                              rowSpan={detailPoste.familles.length}
+                            >
+                              {formatCurrency(detailPoste.total_poste || 0)}
+                            </td>
+                          )}
+                        </tr>
+                      ))
+                    );
+                  })}
                 </tbody>
               </table>
             ) : (
@@ -373,23 +412,38 @@ export default function Show({ auth, demande }) {
                 <tr className="bg-white">
                   <td className="border border-gray-300 px-4 py-2 font-medium">Prélèvement Total (C1)</td>
                   <td className="border border-gray-300 px-4 py-2 text-right font-semibold text-[#26658C]">
-                    {formatCurrency(coutDetails.detail.C1_total || 0)}
+                    {formatCurrency(coutDetails.detail.C1_prelevement_total || 0)}
                   </td>
-                  <td className="border border-gray-300 px-4 py-2 text-gray-600">700 MAD par famille</td>
+                  <td className="border border-gray-300 px-4 py-2 text-gray-600">
+                    {coutDetails.detail.nombre_total_familles || 0} famille(s) × 700 MAD
+                  </td>
                 </tr>
                 <tr className="bg-gray-50">
                   <td className="border border-gray-300 px-4 py-2 font-medium">Préparation Total (C2)</td>
                   <td className="border border-gray-300 px-4 py-2 text-right font-semibold text-[#26658C]">
-                    {formatCurrency(coutDetails.detail.C2_total || 0)}
+                    {formatCurrency(coutDetails.detail.C2_preparation_total || 0)}
                   </td>
-                  <td className="border border-gray-300 px-4 py-2 text-gray-600">Variable par famille</td>
+                  <td className="border border-gray-300 px-4 py-2 text-gray-600">
+                    Variable par famille ({coutDetails.detail.nombre_total_familles || 0} famille(s))
+                  </td>
                 </tr>
                 <tr className="bg-white">
                   <td className="border border-gray-300 px-4 py-2 font-medium">Analyse Total (C3)</td>
                   <td className="border border-gray-300 px-4 py-2 text-right font-semibold text-[#26658C]">
-                    {formatCurrency(coutDetails.detail.C3_total || 0)}
+                    {formatCurrency(coutDetails.detail.C3_analyse_total || 0)}
                   </td>
-                  <td className="border border-gray-300 px-4 py-2 text-gray-600">Somme des composants</td>
+                  <td className="border border-gray-300 px-4 py-2 text-gray-600">
+                    {coutDetails.detail.nombre_composants_total || 0} composant(s) analysé(s)
+                  </td>
+                </tr>
+                <tr className="bg-blue-50">
+                  <td className="border border-gray-300 px-4 py-2 font-bold">Total Analyse (C1+C2+C3)</td>
+                  <td className="border border-gray-300 px-4 py-2 text-right font-bold text-[#26658C] text-lg">
+                    {formatCurrency(coutDetails.detail.total_analyse || 0)}
+                  </td>
+                  <td className="border border-gray-300 px-4 py-2 text-gray-600 font-medium">
+                    Coût total de l'analyse
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -414,83 +468,12 @@ export default function Show({ auth, demande }) {
               </tbody>
             </table>
           </div>
+
+         
         </div>
       )}
 
-      {/* TABLEAU POSTES DE TRAVAIL - CORRIGÉ */}
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">
-          Postes de Travail ({getTotalPostes()} poste(s) sur {demande.sites?.length || 0} site(s))
-        </h2>
-        
-        {getAllPostes().length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-sm min-w-max">
-              <thead>
-                <tr className="bg-[#26658C] text-white">
-                  <th className="border border-gray-300 px-4 py-2 text-left whitespace-nowrap">N°</th>
-                  <th className="border border-gray-300 px-4 py-2 text-left whitespace-nowrap">Site</th>
-                  <th className="border border-gray-300 px-4 py-2 text-left whitespace-nowrap">Nom Poste</th>
-                  <th className="border border-gray-300 px-4 py-2 text-left whitespace-nowrap">Produit</th>
-                  <th className="border border-gray-300 px-4 py-2 text-left whitespace-nowrap">Zone Activité</th>
-                  <th className="border border-gray-300 px-4 py-2 text-center whitespace-nowrap">Personnes Exposées</th>
-                  <th className="border border-gray-300 px-4 py-2 text-center whitespace-nowrap">Durée Shift (h)</th>
-                  <th className="border border-gray-300 px-4 py-2 text-center whitespace-nowrap">Exposition Quot. (h)</th>
-                  <th className="border border-gray-300 px-4 py-2 text-center whitespace-nowrap">Nb Shifts</th>
-                  <th className="border border-gray-300 px-4 py-2 text-left whitespace-nowrap">Description</th>
-                  <th className="border border-gray-300 px-4 py-2 text-left whitespace-nowrap">Composants à Analyser</th>
-                </tr>
-              </thead>
-              <tbody>
-                {getAllPostes().map((poste, index) => (
-                  <tr key={poste.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                    <td className="border border-gray-300 px-4 py-2 text-center font-medium">{index + 1}</td>
-                    <td className="border border-gray-300 px-4 py-2">
-                      <div className="text-xs">
-                        <div className="font-medium">{poste.site_nom}</div>
-                        <div className="text-gray-500">{poste.site_ville}</div>
-                      </div>
-                    </td>
-                    <td className="border border-gray-300 px-4 py-2 font-medium">{poste.nom_poste}</td>
-                    <td className="border border-gray-300 px-4 py-2">{poste.produit || '-'}</td>
-                    <td className="border border-gray-300 px-4 py-2">
-                      <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
-                        {poste.zone_activite}
-                      </span>
-                    </td>
-                    <td className="border border-gray-300 px-4 py-2 text-center">{poste.personnes_exposees}</td>
-                    <td className="border border-gray-300 px-4 py-2 text-center">{poste.duree_shift}h</td>
-                    <td className="border border-gray-300 px-4 py-2 text-center">{poste.duree_exposition_quotidienne}h</td>
-                    <td className="border border-gray-300 px-4 py-2 text-center">{poste.nb_shifts}</td>
-                    <td className="border border-gray-300 px-4 py-2 max-w-xs">
-                      <div className="text-xs">{poste.description}</div>
-                    </td>
-                    <td className="border border-gray-300 px-4 py-2">
-                      {poste.composants && poste.composants.length > 0 ? (
-                        <div className="space-y-1">
-                          {poste.composants.map((composant) => (
-                            <div key={composant.id} className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded inline-block mr-1 mb-1">
-                              {composant.nom}
-                              {composant.cas_number && (
-                                <span className="text-green-600"> ({composant.cas_number})</span>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      ) : '-'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="text-center py-8 text-gray-500">
-            <FaBuilding className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <p>Aucun poste de travail défini</p>
-          </div>
-        )}
-      </div>
+     
     </AuthenticatedLayout>
   );
 }
