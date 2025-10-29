@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\DB;
 
 class DemandeController extends Controller
 {
-    public function create(Request $request)
+     public function create(Request $request)
     {
         $matriceId = $request->query('matrice_id');
         $matrice = null;
@@ -26,10 +26,14 @@ class DemandeController extends Controller
             $matrice = Matrice::find($matriceId);
         }
         
+        // Charger les villes pour le formulaire
+        $villes = Ville::all();
+        
         return Inertia::render('User/Chiffrage/Nouveau', [
             'auth' => ['user' => auth()->user()],
             'matrice_id' => $matriceId,
-            'matrice' => $matrice
+            'matrice' => $matrice,
+            'villes' => $villes // Passer les villes au frontend
         ]);
     }
 
@@ -53,24 +57,11 @@ public function store(Request $request)
             ]
         );
 
-        // 2. Créer les sites AVEC ville_id
-        $siteIds = [];
-        foreach ($request->sites as $siteData) {
-            $site = Site::create([
-                'entreprise_id' => $entreprise->id,
-                'nom_site' => $siteData['nom_site'],
-                'ville_id' => $siteData['ville_id'],
-                'code_site' => $siteData['code_site'] ?? null,
-            ]);
-            $siteIds[] = $site->id;
-        }
-
-        // 3. Créer la demande AVEC user_id
+        // 2. Créer la demande SANS site_id
         $demande = Demande::create([
             'user_id' => auth()->id(),
             'entreprise_id' => $entreprise->id,
             'matrice_id' => $request->matrice_id,
-            'site_id' => $siteIds[0],
             'date_creation' => now(),
             'statut' => 'en_attente',
             'contact_nom_demande' => $request->contact_nom_demande ?? $request->contact_nom,
@@ -78,32 +69,47 @@ public function store(Request $request)
             'contact_tel_demande' => $request->contact_tel_demande ?? $request->telephone,
         ]);
 
-        // 4. Créer les postes avec leurs composants
-        $postesCount = 0;
-        foreach ($request->postes as $posteData) {
-            $poste = Poste::create([
+        // 3. Créer les sites avec demande_id
+        $totalPostesCount = 0;
+        
+        foreach ($request->sites as $siteData) {
+            $site = Site::create([
+                'entreprise_id' => $entreprise->id,
                 'demande_id' => $demande->id,
-                'site_id' => $siteIds[0],
-                'nom_poste' => $posteData['nom_poste'],
-                'zone_activite' => $posteData['zone_activite'],
-                'description' => $posteData['description'],
-                'personnes_exposees' => $posteData['personnes_exposees'],
-                'duree_shift' => $posteData['duree_shift'],
-                'duree_exposition_quotidienne' => $posteData['duree_exposition_quotidienne'],
-                'nb_shifts' => $posteData['nb_shifts'],
-                'produit' => $posteData['produit'] ?? '',
+                'nom_site' => $siteData['nom_site'],
+                'ville_id' => $siteData['ville_id'],
+                'code_site' => $siteData['code_site'] ?? null,
             ]);
-            $postesCount++;
 
-            // Attacher les composants
-            if (!empty($posteData['composants'])) {
-                $poste->composants()->attach($posteData['composants']);
+            // Créer les postes pour CE SITE
+            if (isset($siteData['postes']) && is_array($siteData['postes'])) {
+                foreach ($siteData['postes'] as $posteData) {
+                    $poste = Poste::create([
+                        'demande_id' => $demande->id,
+                        'site_id' => $site->id, // LIER LE POSTE AU SITE
+                        'nom_poste' => $posteData['nom_poste'],
+                        'zone_activite' => $posteData['zone_activite'],
+                        'description' => $posteData['description'],
+                        'personnes_exposees' => $posteData['personnes_exposees'],
+                        'duree_shift' => $posteData['duree_shift'],
+                        'duree_exposition_quotidienne' => $posteData['duree_exposition_quotidienne'],
+                        'nb_shifts' => $posteData['nb_shifts'],
+                        'produit' => $posteData['produit'] ?? '',
+                    ]);
+                    $totalPostesCount++;
+
+                    // Attacher les composants
+                    if (!empty($posteData['composants'])) {
+                        $poste->composants()->attach($posteData['composants']);
+                    }
+                }
             }
         }
 
-        // 5. ENVOYER LA NOTIFICATION À TOUS LES ADMINS
+        // 4. ENVOYER LA NOTIFICATION
         $admins = User::where('role', 'admin')->get();
         $matrice = Matrice::find($request->matrice_id);
+        $premierSite = $demande->premierSite(); // Utiliser la nouvelle méthode
         
         foreach ($admins as $admin) {
             Notification::create([
@@ -115,9 +121,10 @@ public function store(Request $request)
                     'entreprise' => $entreprise->nom,
                     'ice' => $entreprise->ice,
                     'matrice' => $matrice->label,
-                    'site' => $site->nom_site,
-                    'ville' => $site->ville->nom ?? 'Non spécifiée',
-                    'postes_count' => $postesCount,
+                    'site' => $premierSite->nom_site ?? 'Non spécifié',
+                    'ville' => $premierSite->ville->nom ?? 'Non spécifiée',
+                    'postes_count' => $totalPostesCount,
+                    'sites_count' => $demande->nombre_sites, // Utiliser l'accesseur
                     'contact_nom' => $demande->contact_nom_demande,
                     'contact_email' => $demande->contact_email_demande,
                     'contact_tel' => $demande->contact_tel_demande,
@@ -149,8 +156,8 @@ public function historiqueMatrice($matrice_id)
     
     $demandes = Demande::with([
         'entreprise',
-        'site', 
-        'postes.composants.famille'
+        'sites.ville', // Tous les sites avec leur ville
+        'sites.postes.composants.famille', // Postes de tous les sites avec leurs composants et familles
     ])
     ->where('matrice_id', $matrice_id)
     ->orderBy('created_at', 'desc')
@@ -165,10 +172,11 @@ public function historiqueMatrice($matrice_id)
         $demande->cout_total_sans_deplacement = $resultatCout['total_sans_deplacement'];
         $demande->detail_cout = $resultatCout['detail'];
         
-        // 🔹 CORRECTION : S'assurer que ville est une chaîne
-        if (is_object($demande->site->ville)) {
-            $demande->site->ville = $demande->site->ville->nom ?? 'Ville inconnue';
-        }
+        // Utiliser les accesseurs pour les comptes
+        $demande->nombre_sites = $demande->sites->count();
+        $demande->nombre_postes = $demande->sites->sum(function($site) {
+            return $site->postes->count();
+        });
     });
 
     return Inertia::render('User/Chiffrage/Historique', [
@@ -183,19 +191,20 @@ public function edit(Demande $demande)
         abort(403, 'Cette demande ne peut pas être modifiée');
     }
 
+    // CORRECTION : Charger les sites au lieu du site
     $demande->load([
         'entreprise',
-        'site.ville', // Charger la ville du site
-        'postes.composants'
+        'sites.ville', // Tous les sites avec leur ville
+        'sites.postes.composants' // Postes de tous les sites
     ]);
 
     $matrices = Matrice::all();
-    $villes = Ville::all(); // Charger toutes les villes
+    $villes = Ville::all();
 
     return Inertia::render('User/Chiffrage/Edit', [
         'demande' => $demande,
         'matrices' => $matrices,
-        'villes' => $villes, // Passer les villes au frontend
+        'villes' => $villes,
         'auth' => ['user' => auth()->user()]
     ]);
 }
@@ -227,54 +236,60 @@ public function update(Request $request, Demande $demande)
             ]
         );
 
-        // 2. Mettre à jour les sites AVEC ville_id
-        $siteIds = [];
+        // 2. Supprimer les anciens sites et leurs postes
+        foreach ($demande->sites as $site) {
+            // Détacher les composants des postes
+            foreach ($site->postes as $poste) {
+                $poste->composants()->detach();
+            }
+            // Supprimer les postes
+            $site->postes()->delete();
+        }
+        // Supprimer les sites
+        $demande->sites()->delete();
+
+        // 3. Recréer les sites avec leurs postes
         foreach ($request->sites as $siteData) {
-            $site = Site::updateOrCreate(
-                [
-                    'entreprise_id' => $entreprise->id,
-                    'nom_site' => $siteData['nom_site']
-                ],
-                [
-                    'ville_id' => $siteData['ville_id'], // Utiliser ville_id
-                    'code_site' => $siteData['code_site'] ?? null,
-                ]
-            );
-            $siteIds[] = $site->id;
+            $site = Site::create([
+                'entreprise_id' => $entreprise->id,
+                'demande_id' => $demande->id,
+                'nom_site' => $siteData['nom_site'],
+                'ville_id' => $siteData['ville_id'],
+                'code_site' => $siteData['code_site'] ?? null,
+            ]);
+
+            // Recréer les postes pour CE SITE
+            if (isset($siteData['postes']) && is_array($siteData['postes'])) {
+                foreach ($siteData['postes'] as $posteData) {
+                    $poste = Poste::create([
+                        'demande_id' => $demande->id,
+                        'site_id' => $site->id,
+                        'nom_poste' => $posteData['nom_poste'],
+                        'zone_activite' => $posteData['zone_activite'],
+                        'description' => $posteData['description'],
+                        'personnes_exposees' => $posteData['personnes_exposees'],
+                        'duree_shift' => $posteData['duree_shift'],
+                        'duree_exposition_quotidienne' => $posteData['duree_exposition_quotidienne'],
+                        'nb_shifts' => $posteData['nb_shifts'],
+                        'produit' => $posteData['produit'] ?? '',
+                    ]);
+
+                    // Attacher les composants
+                    if (!empty($posteData['composants'])) {
+                        $poste->composants()->attach($posteData['composants']);
+                    }
+                }
+            }
         }
 
-        // 3. Mettre à jour la demande
+        // 4. Mettre à jour la demande
         $demande->update([
             'entreprise_id' => $entreprise->id,
             'matrice_id' => $request->matrice_id,
-            'site_id' => $siteIds[0],
             'contact_nom_demande' => $request->contact_nom_demande ?? $request->contact_nom,
             'contact_email_demande' => $request->contact_email_demande ?? $request->email,
             'contact_tel_demande' => $request->contact_tel_demande ?? $request->telephone,
         ]);
-
-        // 4. Supprimer les anciens postes et recréer
-        $demande->postes()->delete();
-
-        foreach ($request->postes as $posteData) {
-            $poste = Poste::create([
-                'demande_id' => $demande->id,
-                'site_id' => $siteIds[0],
-                'nom_poste' => $posteData['nom_poste'],
-                'zone_activite' => $posteData['zone_activite'],
-                'description' => $posteData['description'],
-                'personnes_exposees' => $posteData['personnes_exposees'],
-                'duree_shift' => $posteData['duree_shift'],
-                'duree_exposition_quotidienne' => $posteData['duree_exposition_quotidienne'],
-                'nb_shifts' => $posteData['nb_shifts'],
-                'produit' => $posteData['produit'] ?? '', // Ajouter le produit
-            ]);
-
-            // Attacher les composants
-            if (!empty($posteData['composants'])) {
-                $poste->composants()->attach($posteData['composants']);
-            }
-        }
 
         DB::commit();
 
@@ -339,20 +354,19 @@ public function destroy(Demande $demande)
     }
 }
     public function show(Demande $demande)
-    {
-        $demande->load([
-            'entreprise',
-            'matrice', 
-            'site.ville', 
-            'site',
-            'postes.composants'
-        ]);
+{
+    $demande->load([
+        'entreprise',
+        'matrice', 
+        'sites.ville', // Tous les sites avec leur ville
+        'sites.postes.composants', // Postes de tous les sites
+    ]);
 
-        return Inertia::render('User/Chiffrage/Show', [
-            'demande' => $demande,
-            'auth' => ['user' => auth()->user()]
-        ]);
-    }
+    return Inertia::render('User/Chiffrage/Show', [
+        'demande' => $demande,
+        'auth' => ['user' => auth()->user()]
+    ]);
+}
 
     public function telechargerDemande(Demande $demande)
     {

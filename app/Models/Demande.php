@@ -10,9 +10,10 @@ class Demande extends Model
     use HasFactory;
 
     protected $fillable = [
-        'code_affaire', 'user_id', 'entreprise_id', 'matrice_id', 'site_id',
+        'code_affaire', 'entreprise_id', 'matrice_id', 'user_id',
         'date_creation', 'statut', 'contact_nom_demande', 
         'contact_email_demande', 'contact_tel_demande'
+        // 'site_id' SUPPRIMÉ
     ];
 
     protected static function boot()
@@ -28,17 +29,7 @@ class Demande extends Model
             $increment = str_pad($lastDemande + 1, 3, '0', STR_PAD_LEFT);
             
             $demande->code_affaire = "HT-{$date}-{$increment}-{$abreviation}";
-            
-            // Assigner l'utilisateur connecté si user_id n'est pas déjà défini
-            if (auth()->check() && !$demande->user_id) {
-                $demande->user_id = auth()->id();
-            }
         });
-    }
-
-    public function user()
-    {
-        return $this->belongsTo(User::class);
     }
 
     public function entreprise()
@@ -51,13 +42,44 @@ class Demande extends Model
         return $this->belongsTo(Matrice::class);
     }
 
-    public function site()
+    // SUPPRIMER la méthode site() si elle existe
+    // public function site()
+    // {
+    //     return $this->belongsTo(Site::class);
+    // }
+
+    // GARDER : Tous les sites de la demande
+    public function sites()
     {
-        return $this->belongsTo(Site::class);
+        return $this->hasMany(Site::class);
     }
 
+    // GARDER : Tous les postes (via les sites)
     public function postes()
     {
         return $this->hasMany(Poste::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    // NOUVELLE MÉTHODE : Premier site (pour compatibilité)
+    public function premierSite()
+    {
+        return $this->sites()->first();
+    }
+
+    // NOUVELLE MÉTHODE : Nombre de sites
+    public function getNombreSitesAttribute()
+    {
+        return $this->sites()->count();
+    }
+
+    // NOUVELLE MÉTHODE : Nombre total de postes
+    public function getNombrePostesAttribute()
+    {
+        return $this->postes()->count();
     }
 }

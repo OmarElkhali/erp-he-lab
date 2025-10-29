@@ -1,7 +1,7 @@
 // resources/js/Pages/User/Chiffrage/Historique.jsx
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router } from '@inertiajs/react';
-import { FaEdit, FaTrash, FaEye, FaDownload, FaFilePdf, FaUpload,FaFileAlt} from 'react-icons/fa';
+import { FaEdit, FaTrash, FaEye, FaDownload, FaFilePdf, FaUpload, FaFileAlt } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 
 export default function Historique({ auth, demandes, matrice }) {
@@ -33,6 +33,34 @@ export default function Historique({ auth, demandes, matrice }) {
   const formatMontant = (montant) => {
     if (!montant && montant !== 0) return '0';
     return typeof montant === 'number' ? montant.toLocaleString('fr-FR') : '0';
+  };
+
+  // 🔹 FONCTION POUR COMPTER LE NOMBRE TOTAL DE POSTES DANS TOUS LES SITES
+  const getTotalPostes = (demande) => {
+    if (!demande.sites) return 0;
+    
+    let total = 0;
+    demande.sites.forEach(site => {
+      total += site.postes ? site.postes.length : 0;
+    });
+    return total;
+  };
+
+  // 🔹 FONCTION POUR OBTENIR LA LISTE DES NOMS DE TOUS LES POSTES
+  const getNomsPostes = (demande) => {
+    if (!demande.sites) return [];
+    
+    const nomsPostes = [];
+    demande.sites.forEach(site => {
+      if (site.postes) {
+        site.postes.forEach(poste => {
+          if (poste.nom_poste) {
+            nomsPostes.push(poste.nom_poste);
+          }
+        });
+      }
+    });
+    return nomsPostes;
   };
 
   const handleDelete = async (demandeId, codeAffaire) => {
@@ -180,7 +208,7 @@ export default function Historique({ auth, demandes, matrice }) {
                     Entreprise
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Site
+                    Sites
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Date Création
@@ -215,31 +243,40 @@ export default function Historique({ auth, demandes, matrice }) {
                       <div className="text-sm font-medium text-gray-900">{demande.entreprise.nom}</div>
                       <div className="text-sm text-gray-500">ICE: {demande.entreprise.ice}</div>
                     </td>
+                    
+                    {/* NOUVELLE COLONNE SITES */}
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{demande.site.nom_site}</div>
-                      <div className="text-sm text-gray-500">
-                        {/* 🔹 CORRECTION : Utiliser la fonction helper */}
-                        {getVilleName(demande.site)}
+                      <div className="text-sm text-gray-900">
+                        {demande.sites?.length || 0} site(s)
                       </div>
-                      {demande.site.code_site && (
-                        <div className="text-xs text-gray-400">Code: {demande.site.code_site}</div>
+                      <div className="text-xs text-gray-500 max-w-xs truncate">
+                        {demande.sites?.map(s => s.nom_site).join(', ') || 'Aucun site'}
+                      </div>
+                      {demande.sites && demande.sites.length > 0 && (
+                        <div className="text-xs text-gray-400 mt-1">
+                          {demande.sites[0]?.ville?.nom || getVilleName(demande.sites[0])}
+                          {demande.sites.length > 1 && ` +${demande.sites.length - 1} autre(s)`}
+                        </div>
                       )}
-                      
                     </td>
+                    
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {new Date(demande.date_creation).toLocaleDateString('fr-FR')}
                     </td>
+                    
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">{demande.contact_nom_demande}</div>
                       <div className="text-sm text-gray-500">{demande.contact_email_demande}</div>
                       <div className="text-sm text-gray-500">{demande.contact_tel_demande}</div>
                     </td>
+                    
+                    {/* NOUVELLE COLONNE POSTES (calculée depuis tous les sites) */}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        {demande.postes?.length || 0} poste(s)
+                        {getTotalPostes(demande)} poste(s)
                       </div>
-                      <div className="text-xs text-gray-500">
-                        {demande.postes?.map(p => p.nom_poste).join(', ')}
+                      <div className="text-xs text-gray-500 max-w-xs truncate">
+                        {getNomsPostes(demande).join(', ') || 'Aucun poste'}
                       </div>
                     </td>
                     
@@ -261,7 +298,6 @@ export default function Historique({ auth, demandes, matrice }) {
                       <div className="text-xs text-gray-500">
                         Sans déplacement
                       </div>
-                      
                     </td>
                     
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -344,6 +380,7 @@ export default function Historique({ auth, demandes, matrice }) {
           </div>
         )}
       </div>
+
     </AuthenticatedLayout>
   );
 }
