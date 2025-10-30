@@ -137,15 +137,7 @@ export default function Show({ auth, demande }) {
               </td>
               <td className="border border-gray-300 px-4 py-2 text-gray-600">Coût fixe par dossier</td>
             </tr>
-            <tr className="bg-white">
-              <td className="border border-gray-300 px-4 py-2 font-medium">Déplacement (C6)</td>
-              <td className="border border-gray-300 px-4 py-2 text-right font-semibold text-[#26658C]">
-                {formatCurrency(coutDetails.detail.C6_deplacement_total || 0)}
-              </td>
-              <td className="border border-gray-300 px-4 py-2 text-gray-600">
-                Frais de déplacement - {coutDetails.detail.nombre_sites || 0} site(s)
-              </td>
-            </tr>
+            
           </tbody>
         </table>
       </div>
