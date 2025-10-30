@@ -158,7 +158,6 @@ export default function Show({ auth, demande }) {
             <thead>
               <tr className="bg-gray-200 text-gray-700">
                 <th className="border border-gray-300 px-4 py-2 text-left">Ville</th>
-                <th className="border border-gray-300 px-4 py-2 text-left">Sites</th>
                 <th className="border border-gray-300 px-4 py-2 text-right">Frais de Déplacement</th>
               </tr>
             </thead>
@@ -166,15 +165,6 @@ export default function Show({ auth, demande }) {
               {coutDetails.detail.C6_villes_uniques.map((ville, index) => (
                 <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                   <td className="border border-gray-300 px-4 py-2 font-medium">{ville.ville}</td>
-                  <td className="border border-gray-300 px-4 py-2">
-                    {ville.sites && ville.sites.length > 0 ? (
-                      <div className="text-xs">
-                        {ville.sites.map((site, idx) => (
-                          <div key={idx}>• {site}</div>
-                        ))}
-                      </div>
-                    ) : '-'}
-                  </td>
                   <td className="border border-gray-300 px-4 py-2 text-right font-semibold text-[#26658C]">
                     {formatCurrency(ville.frais_deplacement)}
                   </td>
@@ -186,115 +176,126 @@ export default function Show({ auth, demande }) {
       )}
 
       {/* Tableau Détail par Poste avec Produits */}
-      <div className="mb-6 overflow-x-auto">
-        <h3 className="text-md font-semibold text-gray-900 mb-3">
-          Détail par Poste et Produit ({coutDetails.detail.detail_postes?.length || 0} poste(s))
-        </h3>
-        
-        {coutDetails.detail.detail_postes && coutDetails.detail.detail_postes.length > 0 ? (
-          <table className="w-full border-collapse text-sm min-w-max">
-            <thead>
-              <tr className="bg-[#26658C] text-white">
-                <th className="border border-gray-300 px-4 py-2 text-left whitespace-nowrap">Poste</th>
-                <th className="border border-gray-300 px-4 py-2 text-left whitespace-nowrap">Site</th>
-                <th className="border border-gray-300 px-4 py-2 text-left whitespace-nowrap">Produit</th>
-                <th className="border border-gray-300 px-4 py-2 text-left whitespace-nowrap">Famille</th>
-                <th className="border border-gray-300 px-4 py-2 text-left whitespace-nowrap">Composants</th>
-                <th className="border border-gray-300 px-4 py-2 text-right whitespace-nowrap">C1 (Prélèvement)</th>
-                <th className="border border-gray-300 px-4 py-2 text-right whitespace-nowrap">C2 (Préparation)</th>
-                <th className="border border-gray-300 px-4 py-2 text-right whitespace-nowrap">C3 (Analyse)</th>
-                <th className="border border-gray-300 px-4 py-2 text-right whitespace-nowrap">Total Produit</th>
-              </tr>
-            </thead>
-            <tbody>
-              {coutDetails.detail.detail_postes.map((detailPoste, posteIndex) => (
-                detailPoste.produits && detailPoste.produits.map((produit, produitIndex) => (
-                  produit.familles && produit.familles.map((famille, familleIndex) => (
-                    <tr key={`${posteIndex}-${produitIndex}-${familleIndex}`} 
-                        className={familleIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                      {familleIndex === 0 && produitIndex === 0 && (
-                        <>
-                          <td 
-                            className="border border-gray-300 px-4 py-2 font-medium align-top" 
-                            rowSpan={detailPoste.produits.reduce((acc, prod) => acc + (prod.familles ? prod.familles.length : 0), 0)}
-                          >
-                            <div>
-                              <div className="font-medium">{detailPoste.poste}</div>
-                            </div>
-                          </td>
-                          <td 
-                            className="border border-gray-300 px-4 py-2 align-top" 
-                            rowSpan={detailPoste.produits.reduce((acc, prod) => acc + (prod.familles ? prod.familles.length : 0), 0)}
-                          >
-                            <div className="text-xs">
-                              <div className="font-medium">{detailPoste.site}</div>
-                              <div className="text-gray-500">{detailPoste.ville}</div>
-                            </div>
-                          </td>
-                        </>
-                      )}
-                      {familleIndex === 0 && (
-                        <td 
-                          className="border border-gray-300 px-4 py-2 align-top" 
-                          rowSpan={produit.familles ? produit.familles.length : 1}
-                        >
-                          <div>
-                            <div className="font-medium">{produit.produit}</div>
-                            {produit.description && (
-                              <div className="text-xs text-gray-500 mt-1">{produit.description}</div>
-                            )}
-                          </div>
-                        </td>
-                      )}
-                      <td className="border border-gray-300 px-4 py-2">
-                        <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">
-                          {famille.famille}
+<div className="mb-6 overflow-x-auto">
+  <h3 className="text-md font-semibold text-gray-900 mb-3">
+    Détail par Poste et Produit ({coutDetails.detail.detail_postes?.length || 0} poste(s))
+  </h3>
+  
+  {coutDetails.detail.detail_postes && coutDetails.detail.detail_postes.length > 0 ? (
+    <table className="w-full border-collapse text-sm min-w-max">
+      <thead>
+        <tr className="bg-[#26658C] text-white">
+          <th className="border border-gray-300 px-4 py-2 text-left whitespace-nowrap">Poste</th>
+          <th className="border border-gray-300 px-4 py-2 text-left whitespace-nowrap">Zone</th>
+          <th className="border border-gray-300 px-4 py-2 text-left whitespace-nowrap">Site</th>
+          <th className="border border-gray-300 px-4 py-2 text-left whitespace-nowrap">Produit</th>
+          <th className="border border-gray-300 px-4 py-2 text-left whitespace-nowrap">Famille</th>
+          <th className="border border-gray-300 px-4 py-2 text-left whitespace-nowrap">Composants</th>
+          <th className="border border-gray-300 px-4 py-2 text-right whitespace-nowrap">C1 (Prélèvement)</th>
+          <th className="border border-gray-300 px-4 py-2 text-right whitespace-nowrap">C2 (Préparation)</th>
+          <th className="border border-gray-300 px-4 py-2 text-right whitespace-nowrap">C3 (Analyse)</th>
+          <th className="border border-gray-300 px-4 py-2 text-right whitespace-nowrap">Total Produit</th>
+        </tr>
+      </thead>
+      <tbody>
+        {coutDetails.detail.detail_postes.map((detailPoste, posteIndex) => (
+          detailPoste.produits && detailPoste.produits.map((produit, produitIndex) => (
+            produit.familles && produit.familles.map((famille, familleIndex) => (
+              <tr key={`${posteIndex}-${produitIndex}-${familleIndex}`} 
+                  className={familleIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                {familleIndex === 0 && produitIndex === 0 && (
+                  <>
+                    <td 
+                      className="border border-gray-300 px-4 py-2 font-medium align-top" 
+                      rowSpan={detailPoste.produits.reduce((acc, prod) => acc + (prod.familles ? prod.familles.length : 0), 0)}
+                    >
+                      <div>
+                        <div className="font-medium">{detailPoste.poste}</div>
+                      </div>
+                    </td>
+                    <td 
+                      className="border border-gray-300 px-4 py-2 align-top" 
+                      rowSpan={detailPoste.produits.reduce((acc, prod) => acc + (prod.familles ? prod.familles.length : 0), 0)}
+                    >
+                      <div>
+                        <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
+                          {detailPoste.zone_activite || 'Zone non spécifiée'}
                         </span>
-                      </td>
-                      <td className="border border-gray-300 px-4 py-2">
-                        {famille.composants && famille.composants.length > 0 ? (
-                          <div className="space-y-1">
-                            {famille.composants.map((composant, compIndex) => (
-                              <div key={compIndex} className="text-xs">
-                                <span className="font-medium">{composant.nom}</span>
-                                {composant.cas_number && (
-                                  <span className="text-gray-500"> ({composant.cas_number})</span>
-                                )}
-                                <span className="text-[#26658C] ml-2">{formatCurrency(composant.cout_analyse)}</span>
-                              </div>
-                            ))}
-                          </div>
-                        ) : '-'}
-                      </td>
-                      <td className="border border-gray-300 px-4 py-2 text-right font-semibold">
-                        {formatCurrency(famille.C1 || 0)}
-                      </td>
-                      <td className="border border-gray-300 px-4 py-2 text-right font-semibold">
-                        {formatCurrency(famille.C2 || 0)}
-                      </td>
-                      <td className="border border-gray-300 px-4 py-2 text-right font-semibold">
-                        {formatCurrency(famille.C3 || 0)}
-                      </td>
-                      {familleIndex === 0 && (
-                        <td 
-                          className="border border-gray-300 px-4 py-2 text-right font-bold text-[#26658C] bg-blue-50 align-top" 
-                          rowSpan={produit.familles ? produit.familles.length : 1}
-                        >
-                          {formatCurrency(produit.total_produit || 0)}
-                        </td>
+                      </div>
+                    </td>
+                    <td 
+                      className="border border-gray-300 px-4 py-2 align-top" 
+                      rowSpan={detailPoste.produits.reduce((acc, prod) => acc + (prod.familles ? prod.familles.length : 0), 0)}
+                    >
+                      <div className="text-xs">
+                        <div className="font-medium">{detailPoste.site}</div>
+                        <div className="text-gray-500">{detailPoste.ville}</div>
+                      </div>
+                    </td>
+                  </>
+                )}
+                {familleIndex === 0 && (
+                  <td 
+                    className="border border-gray-300 px-4 py-2 align-top" 
+                    rowSpan={produit.familles ? produit.familles.length : 1}
+                  >
+                    <div>
+                      <div className="font-medium">{produit.produit}</div>
+                      {produit.description && (
+                        <div className="text-xs text-gray-500 mt-1">{produit.description}</div>
                       )}
-                    </tr>
-                  ))
-                ))
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          <div className="text-center py-4 text-gray-500">
-            Aucun détail de poste disponible
-          </div>
-        )}
-      </div>
+                    </div>
+                  </td>
+                )}
+                <td className="border border-gray-300 px-4 py-2">
+                  <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">
+                    {famille.famille}
+                  </span>
+                </td>
+                <td className="border border-gray-300 px-4 py-2">
+                  {famille.composants && famille.composants.length > 0 ? (
+                    <div className="space-y-1">
+                      {famille.composants.map((composant, compIndex) => (
+                        <div key={compIndex} className="text-xs">
+                          <span className="font-medium">{composant.nom}</span>
+                          {composant.cas_number && (
+                            <span className="text-gray-500"> ({composant.cas_number})</span>
+                          )}
+                          <span className="text-[#26658C] ml-2">{formatCurrency(composant.cout_analyse)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : '-'}
+                </td>
+                <td className="border border-gray-300 px-4 py-2 text-right font-semibold">
+                  {formatCurrency(famille.C1 || 0)}
+                </td>
+                <td className="border border-gray-300 px-4 py-2 text-right font-semibold">
+                  {formatCurrency(famille.C2 || 0)}
+                </td>
+                <td className="border border-gray-300 px-4 py-2 text-right font-semibold">
+                  {formatCurrency(famille.C3 || 0)}
+                </td>
+                {familleIndex === 0 && (
+                  <td 
+                    className="border border-gray-300 px-4 py-2 text-right font-bold text-[#26658C] bg-blue-50 align-top" 
+                    rowSpan={produit.familles ? produit.familles.length : 1}
+                  >
+                    {formatCurrency(produit.total_produit || 0)}
+                  </td>
+                )}
+              </tr>
+            ))
+          ))
+        ))}
+      </tbody>
+    </table>
+  ) : (
+    <div className="text-center py-4 text-gray-500">
+      Aucun détail de poste disponible
+    </div>
+  )}
+</div>
 
       {/* Tableau Récapitulatif */}
       <div className="mb-6 overflow-x-auto">

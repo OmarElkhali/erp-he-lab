@@ -106,6 +106,7 @@ class ChiffrageController extends Controller
                 
                 $detailPostes[] = [
                     'poste' => $poste->nom_poste,
+                    'zone_activite' => $poste->zone_activite,
                     'site' => $site->nom_site,
                     'ville' => $site->ville->nom ?? 'Ville inconnue',
                     'total_poste' => $coutPoste,
