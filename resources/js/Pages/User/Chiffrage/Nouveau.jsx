@@ -266,24 +266,7 @@ function PosteComposants({ poste, index, siteIndex, toggleComposant, updatePoste
                 />
             </div>
 
-            {/* 🔹 AFFICHER LES COMPOSANTS SÉLECTIONNÉS */}
-            {selectedNom.length > 0 && (
-                <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-                    <h4 className="text-sm font-medium text-blue-800 mb-2">
-                        Composants sélectionnés ({selectedNom.length})
-                    </h4>
-                    <div className="space-y-1">
-                        {selectedNom.map((composant, idx) => (
-                            <div key={idx} className="flex justify-between items-center text-sm bg-white p-2 rounded border">
-                                <span className="font-medium">{composant.nom}</span>
-                                {composant.cas && (
-                                    <span className="text-gray-500 text-xs">CAS: {composant.cas}</span>
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
+          
         </div>
     );
 }
