@@ -8,10 +8,10 @@ use Illuminate\Http\Request;
 
 class ChiffrageController extends Controller
 {
-    public function calculerCoutTotal(Demande $demande)
+     public function calculerCoutTotal(Demande $demande)
     {
         // Récupération des coûts FIXES depuis la BDD
-        $C1 = Cout::where('code', 'C1')->value('valeur') ?? 700; // Prélèvement (Fixe) - PAR FAMILLE DANS CHAQUE POSTE
+        $C1 = Cout::where('code', 'C1')->value('valeur') ?? 700; // Prélèvement (Fixe) - PAR FAMILLE DANS CHAQUE PRODUIT
         $C4 = Cout::where('code', 'C4')->value('valeur') ?? 200; // Rapport (Fixe) - PAR DEMANDE
         $C5 = Cout::where('code', 'C5')->value('valeur') ?? 300; // Logistique (Fixe) - PAR DEMANDE
         
@@ -33,54 +33,72 @@ class ChiffrageController extends Controller
             }
         }
 
-        // 🔹 NOUVELLE LOGIQUE : COMPTER CHAQUE FAMILLE DANS CHAQUE POSTE
+        // 🔹 NOUVELLE LOGIQUE : COMPTER CHAQUE FAMILLE DANS CHAQUE PRODUIT DE CHAQUE POSTE
         $totalPostes = 0;
         $detailPostes = [];
         $C1_total = 0;
         $C2_total = 0;
         $C3_total = 0;
-        $famillesComptees = []; // Pour suivre les familles déjà comptées globalement
         
         // Parcourir tous les postes de tous les sites
         foreach ($demande->sites as $site) {
             foreach ($site->postes as $poste) {
                 $coutPoste = 0;
-                $detailFamillesPoste = [];
+                $detailProduitsPoste = [];
                 
-                // Grouper les composants par famille pour CE POSTE
-                foreach ($poste->composants->groupBy('famille_id') as $familleId => $composantsFamille) {
-                    $famille = $composantsFamille->first()->famille;
+                // Parcourir tous les produits de ce poste
+                foreach ($poste->produits as $produit) {
+                    $coutProduit = 0;
+                    $detailFamillesProduit = [];
                     
-                    // C1: Prélèvement - 700 MAD POUR CHAQUE FAMILLE DANS CHAQUE POSTE
-                    $C1_famille = $C1;
-                    
-                    // C2: Préparation - Coût fixe POUR CHAQUE FAMILLE DANS CHAQUE POSTE
-                    $C2_famille = $famille->cout_preparation ?? 200;
-                    
-                    // C3: Analyse - Somme des coûts d'analyse des composants de CETTE FAMILLE DANS CE POSTE
-                    $C3_famille = $composantsFamille->sum('cout_analyse');
-                    
-                    $coutFamille = $C1_famille + $C2_famille + $C3_famille;
-                    $coutPoste += $coutFamille;
-                    
-                    // Ajouter aux totaux globaux
-                    $C1_total += $C1_famille;
-                    $C2_total += $C2_famille;
-                    $C3_total += $C3_famille;
-                    
-                    $detailFamillesPoste[] = [
-                        'famille' => $famille->libelle ?? 'Famille inconnue',
-                        'C1' => $C1_famille,
-                        'C2' => $C2_famille,
-                        'C3' => $C3_famille,
-                        'total_famille' => $coutFamille,
-                        'composants' => $composantsFamille->map(function($composant) {
-                            return [
-                                'nom' => $composant->nom,
-                                'cas_number' => $composant->cas_number,
-                                'cout_analyse' => $composant->cout_analyse
+                    // Grouper les composants par famille pour CE PRODUIT
+                    if ($produit->composants && $produit->composants->count() > 0) {
+                        foreach ($produit->composants->groupBy('famille_id') as $familleId => $composantsFamille) {
+                            $famille = $composantsFamille->first()->famille;
+                            
+                            // C1: Prélèvement - 700 MAD POUR CHAQUE FAMILLE DANS CHAQUE PRODUIT
+                            $C1_famille = $C1;
+                            
+                            // C2: Préparation - Coût fixe POUR CHAQUE FAMILLE DANS CHAQUE PRODUIT
+                            $C2_famille = $famille->cout_preparation ?? 200;
+                            
+                            // C3: Analyse - Somme des coûts d'analyse des composants de CETTE FAMILLE DANS CE PRODUIT
+                            $C3_famille = $composantsFamille->sum('cout_analyse');
+                            
+                            $coutFamille = $C1_famille + $C2_famille + $C3_famille;
+                            $coutProduit += $coutFamille;
+                            
+                            // Ajouter aux totaux globaux
+                            $C1_total += $C1_famille;
+                            $C2_total += $C2_famille;
+                            $C3_total += $C3_famille;
+                            
+                            $detailFamillesProduit[] = [
+                                'famille' => $famille->libelle ?? 'Famille inconnue',
+                                'C1' => $C1_famille,
+                                'C2' => $C2_famille,
+                                'C3' => $C3_famille,
+                                'total_famille' => $coutFamille,
+                                'composants' => $composantsFamille->map(function($composant) {
+                                    return [
+                                        'nom' => $composant->nom,
+                                        'cas_number' => $composant->cas_number,
+                                        'cout_analyse' => $composant->cout_analyse
+                                    ];
+                                })
                             ];
-                        })
+                        }
+                    }
+                    
+                    $coutPoste += $coutProduit;
+                    
+                    $detailProduitsPoste[] = [
+                        'produit' => $produit->nom,
+                        'description' => $produit->description,
+                        'total_produit' => $coutProduit,
+                        'familles' => $detailFamillesProduit,
+                        'nombre_familles' => count($detailFamillesProduit),
+                        'nombre_composants' => $produit->composants ? $produit->composants->count() : 0
                     ];
                 }
                 
@@ -90,10 +108,10 @@ class ChiffrageController extends Controller
                     'poste' => $poste->nom_poste,
                     'site' => $site->nom_site,
                     'ville' => $site->ville->nom ?? 'Ville inconnue',
-                    'produit' => $poste->produit,
                     'total_poste' => $coutPoste,
-                    'familles' => $detailFamillesPoste,
-                    'nombre_familles' => count($detailFamillesPoste)
+                    'produits' => $detailProduitsPoste,
+                    'nombre_produits' => count($detailProduitsPoste),
+                    'nombre_familles' => array_sum(array_column($detailProduitsPoste, 'nombre_familles'))
                 ];
             }
         }
@@ -103,10 +121,17 @@ class ChiffrageController extends Controller
         $prixTotalAvecDeplacement = $C4 + $C5 + $totalAnalyse + $C6_total;
         $prixTotalSansDeplacement = $C4 + $C5 + $totalAnalyse;
         
-        // Compter le nombre total de familles (chaque famille dans chaque poste)
+        // Compter le nombre total de familles (chaque famille dans chaque produit)
         $nombreTotalFamilles = 0;
+        $nombreTotalComposants = 0;
+        $nombreTotalProduits = 0;
+        
         foreach ($detailPostes as $poste) {
             $nombreTotalFamilles += $poste['nombre_familles'];
+            $nombreTotalProduits += $poste['nombre_produits'];
+            foreach ($poste['produits'] as $produit) {
+                $nombreTotalComposants += $produit['nombre_composants'];
+            }
         }
         
         // Détail des frais de déplacement par ville unique
@@ -146,11 +171,8 @@ class ChiffrageController extends Controller
                 
                 // STATISTIQUES
                 'nombre_total_familles' => $nombreTotalFamilles,
-                'nombre_composants_total' => $demande->sites->sum(function($site) {
-                    return $site->postes->sum(function($poste) {
-                        return $poste->composants->count();
-                    });
-                }),
+                'nombre_total_composants' => $nombreTotalComposants,
+                'nombre_total_produits' => $nombreTotalProduits,
                 'nombre_postes_total' => $demande->sites->sum(function($site) {
                     return $site->postes->count();
                 }),
@@ -163,9 +185,9 @@ class ChiffrageController extends Controller
                 'detail_postes' => $detailPostes
             ],
             'regles_appliquees' => [
-                'C1 (Prélèvement)' => $C1 . ' MAD par famille dans chaque poste (même famille répétée dans différents postes)',
-                'C2 (Préparation)' => 'Coût de préparation par famille dans chaque poste',
-                'C3 (Analyse)' => 'Somme des coûts d\'analyse des composants de chaque famille dans chaque poste',
+                'C1 (Prélèvement)' => $C1 . ' MAD par famille dans chaque produit (même famille répétée dans différents produits)',
+                'C2 (Préparation)' => 'Coût de préparation par famille dans chaque produit',
+                'C3 (Analyse)' => 'Somme des coûts d\'analyse des composants de chaque famille dans chaque produit',
                 'C4 (Rapport)' => $C4 . ' MAD fixe par demande',
                 'C5 (Logistique)' => $C5 . ' MAD fixe par demande',
                 'C6 (Déplacement)' => 'Frais de déplacement UNIQUES par ville'
@@ -193,7 +215,7 @@ class ChiffrageController extends Controller
     {
         $demande = Demande::with([
             'sites.ville', 
-            'sites.postes.composants.famille'
+            'sites.postes.produits.composants.famille'
         ])->findOrFail($demandeId);
         
         return response()->json($this->calculerCoutTotal($demande));
@@ -203,7 +225,7 @@ class ChiffrageController extends Controller
     {
         $demande = Demande::with([
             'sites.ville', 
-            'sites.postes.composants.famille'
+            'sites.postes.produits.composants.famille'
         ])->findOrFail($demandeId);
         
         $coutSansDeplacement = $this->calculerCoutSansDeplacement($demande);
@@ -218,7 +240,7 @@ class ChiffrageController extends Controller
     {
         $demande = Demande::with([
             'sites.ville', 
-            'sites.postes.composants.famille'
+            'sites.postes.produits.composants.famille'
         ])->findOrFail($demandeId);
         
         $resultat = $this->calculerCoutTotal($demande);

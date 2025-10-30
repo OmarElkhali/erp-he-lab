@@ -3,6 +3,7 @@ import { Head, useForm, usePage, router } from '@inertiajs/react';
 import Select from 'react-select';
 import { useState, useEffect, useCallback } from 'react';
 import axios from "axios";
+import ProduitComposants from './ProduitComposants';
 import Swal from 'sweetalert2';
 import { FaCheck, FaArrowRight, FaArrowLeft, FaPlus, FaPaperPlane } from 'react-icons/fa';
 
@@ -275,39 +276,71 @@ export default function Nouveau({ auth, matrice_id, matrice }) {
     const [currentStep, setCurrentStep] = useState(1);
     const [villes, setVilles] = useState([]);
     const [loadingVilles, setLoadingVilles] = useState(true);
-    const [sites, setSites] = useState([{ 
-        nom_site: '', 
-        ville_id: '',
-        code_site: '',
-        postes: [{  // Chaque site a ses propres postes
-            nom_poste: '', 
-            zone_activite: '', 
-            description: '', 
-            personnes_exposees: '', 
-            duree_shift: '',
-            duree_exposition_quotidienne: '',
-            nb_shifts: '',
-            produit: '',
+    const addProduitToPoste = (siteIndex, posteIndex) => {
+    const newSites = [...sites];
+    newSites[siteIndex].postes[posteIndex].produits.push({
+        nom: '',
+        description: '',
+        composants: []
+    });
+    setSites(newSites);
+};
+const removeProduitFromPoste = (siteIndex, posteIndex, produitIndex) => {
+    const newSites = [...sites];
+    if (newSites[siteIndex].postes[posteIndex].produits.length > 1) {
+        newSites[siteIndex].postes[posteIndex].produits.splice(produitIndex, 1);
+        setSites(newSites);
+    }
+};
+const updateProduitInPoste = (siteIndex, posteIndex, produitIndex, field, value) => {
+    const newSites = [...sites];
+    newSites[siteIndex].postes[posteIndex].produits[produitIndex][field] = value;
+    setSites(newSites);
+};
+// Fonction pour gérer les composants d'un produit
+const toggleComposantInProduit = (siteIndex, posteIndex, produitIndex, composantIds) => {
+    const newSites = [...sites];
+    newSites[siteIndex].postes[posteIndex].produits[produitIndex].composants = composantIds;
+    setSites(newSites);
+};
+    // Dans votre composant Nouveau
+const [sites, setSites] = useState([{ 
+    nom_site: '', 
+    ville_id: '',
+    code_site: '',
+    postes: [{  // Chaque site a ses propres postes
+        nom_poste: '', 
+        zone_activite: '', 
+        personnes_exposees: '', 
+        duree_shift: '',
+        duree_exposition_quotidienne: '',
+        nb_shifts: '',
+        produits: [{  // Chaque poste a maintenant des produits
+            nom: '',
+            description: '',
             composants: []
         }]
-    }]);
+    }]
+}]);
 
     // Fonction pour ajouter un poste à un site spécifique
     const addPosteToSite = (siteIndex) => {
-        const newSites = [...sites];
-        newSites[siteIndex].postes.push({
-            nom_poste: '', 
-            zone_activite: '', 
-            description: '', 
-            personnes_exposees: '', 
-            duree_shift: '',
-            duree_exposition_quotidienne: '',
-            nb_shifts: '',
-            produit: '',
+    const newSites = [...sites];
+    newSites[siteIndex].postes.push({
+        nom_poste: '', 
+        zone_activite: '', 
+        personnes_exposees: '', 
+        duree_shift: '',
+        duree_exposition_quotidienne: '',
+        nb_shifts: '',
+        produits: [{  // Nouveau poste avec un produit vide
+            nom: '',
+            description: '',
             composants: []
-        });
-        setSites(newSites);
-    };
+        }]
+    });
+    setSites(newSites);
+};
 
     // Fonction pour supprimer un poste d'un site spécifique
     const removePosteFromSite = (siteIndex, posteIndex) => {
@@ -325,15 +358,7 @@ export default function Nouveau({ auth, matrice_id, matrice }) {
         setSites(newSites);
     };
 
-    // Fonction pour gérer les composants d'un poste dans un site
-    const toggleComposantInSite = (siteIndex, posteIndex, composantIds, produit = '') => {
-        const newSites = [...sites];
-        newSites[siteIndex].postes[posteIndex].composants = composantIds;
-        if (produit !== '') {
-            newSites[siteIndex].postes[posteIndex].produit = produit;
-        }
-        setSites(newSites);
-    };
+ 
 
     const { data, setData, post, processing, errors, reset } = useForm({
         // Informations entreprise
@@ -467,24 +492,26 @@ export default function Nouveau({ auth, matrice_id, matrice }) {
 
     // Fonctions pour les sites
     const addSite = () => {
-        const newSites = [...sites, { 
-            nom_site: '', 
-            ville_id: '',
-            code_site: '',
-            postes: [{  // Nouveau site avec un poste vide
-                nom_poste: '', 
-                zone_activite: '', 
-                description: '', 
-                personnes_exposees: '', 
-                duree_shift: '',
-                duree_exposition_quotidienne: '',
-                nb_shifts: '',
-                produit: '',
+    const newSites = [...sites, { 
+        nom_site: '', 
+        ville_id: '',
+        code_site: '',
+        postes: [{  // Nouveau site avec un poste vide
+            nom_poste: '', 
+            zone_activite: '', 
+            personnes_exposees: '', 
+            duree_shift: '',
+            duree_exposition_quotidienne: '',
+            nb_shifts: '',
+            produits: [{  // Avec un produit vide
+                nom: '',
+                description: '',
                 composants: []
             }]
-        }];
-        setSites(newSites);
-    };
+        }]
+    }];
+    setSites(newSites);
+};
 
     const removeSite = (index) => {
         if (sites.length > 1) {
@@ -808,208 +835,252 @@ export default function Nouveau({ auth, matrice_id, matrice }) {
                             )}
                             
                             {/* ÉTAPE 3 - POSTES DE TRAVAIL PAR SITE */}
-                            {currentStep === 3 && (
-                                <div className="space-y-6">
-                                    <div className="text-center">
-                                        <h3 className="text-xl font-semibold text-[#26658C] mb-2">Postes de travail par site</h3>
-                                        <div className="w-20 h-1 bg-[#26658C] mx-auto rounded"></div>
+                            {/* ÉTAPE 3 - POSTES DE TRAVAIL PAR SITE */}
+{currentStep === 3 && (
+    <div className="space-y-6">
+        <div className="text-center">
+            <h3 className="text-xl font-semibold text-[#26658C] mb-2">Postes de travail par site</h3>
+            <div className="w-20 h-1 bg-[#26658C] mx-auto rounded"></div>
+        </div>
+        
+        {sites.map((site, siteIndex) => (
+            <div key={siteIndex} className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+                <div className="flex justify-between items-center mb-6">
+                    <h4 className="text-lg font-medium text-[#26658C] flex items-center">
+                        <FaCheck className="mr-2" />
+                        Site: {site.nom_site || `Site ${siteIndex + 1}`}
+                    </h4>
+                    <span className="text-sm text-gray-500">
+                        {site.postes.length} poste(s)
+                    </span>
+                </div>
+                
+                {/* Postes pour ce site */}
+                {site.postes.map((poste, posteIndex) => (
+                    <div key={posteIndex} className="bg-white rounded-lg p-4 border border-gray-200 mb-4">
+                        <div className="flex justify-between items-center mb-4">
+                            <h5 className="font-medium text-[#26658C]">
+                                Poste {posteIndex + 1}
+                            </h5>
+                            {site.postes.length > 1 && (
+                                <button
+                                    type="button"
+                                    onClick={() => removePosteFromSite(siteIndex, posteIndex)}
+                                    className="text-red-500 hover:text-red-700 text-sm"
+                                >
+                                    Supprimer ce poste
+                                </button>
+                            )}
+                        </div>
+                        
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Nom du poste <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    value={poste.nom_poste}
+                                    onChange={e => updatePosteInSite(siteIndex, posteIndex, 'nom_poste', e.target.value)}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
+                                    placeholder="Saisir nom du poste"
+                                    required
+                                />
+                            </div>
+                            
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Zone d'activité <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    value={poste.zone_activite}
+                                    onChange={e => updatePosteInSite(siteIndex, posteIndex, 'zone_activite', e.target.value)}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
+                                    placeholder="Saisir zone d'activité"
+                                    required
+                                />
+                            </div>
+                            
+                            {/* Champs côte à côte */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Personnes exposées <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        value={poste.personnes_exposees}
+                                        onChange={e => {
+                                            const value = Math.max(1, parseInt(e.target.value) || 1);
+                                            updatePosteInSite(siteIndex, posteIndex, 'personnes_exposees', value);
+                                        }}
+                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
+                                        placeholder="Nombre de personnes"
+                                        required
+                                    />
+                                </div>
+                                
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Durée du shift (heures) <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        step="1"
+                                        value={poste.duree_shift}
+                                        onChange={e => {
+                                            const value = Math.max(1, parseInt(e.target.value) || 1);
+                                            updatePosteInSite(siteIndex, posteIndex, 'duree_shift', value);
+                                        }}
+                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
+                                        placeholder="Durée en heures"
+                                        required
+                                    />
+                                </div>
+                                
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Durée exposition quotidienne (heures) <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        step="1"
+                                        value={poste.duree_exposition_quotidienne}
+                                        onChange={e => {
+                                            const value = Math.max(1, parseInt(e.target.value) || 1);
+                                            updatePosteInSite(siteIndex, posteIndex, 'duree_exposition_quotidienne', value);
+                                        }}
+                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
+                                        placeholder="Durée exposition en heures"
+                                        required
+                                    />
+                                </div>
+                                
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Nombre de shifts <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        step="1"
+                                        value={poste.nb_shifts}
+                                        onChange={e => {
+                                            const value = Math.max(1, parseInt(e.target.value) || 1);
+                                            updatePosteInSite(siteIndex, posteIndex, 'nb_shifts', value);
+                                        }}
+                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
+                                        placeholder="Nombre de shifts par jour"
+                                        required
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {/* PRODUITS à analyser */}
+                        <div className="mt-6">
+                            <div className="flex justify-between items-center mb-4">
+                                <h6 className="text-lg font-medium text-[#26658C]">
+                                    Produits à analyser
+                                </h6>
+                                <span className="text-sm text-gray-500">
+                                    {poste.produits?.length || 0} produit(s)
+                                </span>
+                            </div>
+                            
+                            {/* Liste des produits */}
+                            {poste.produits?.map((produit, produitIndex) => (
+                                <div key={produitIndex} className="mb-4 border border-gray-200 rounded-lg">
+                                    <div className="flex justify-between items-center bg-gray-100 px-4 py-2">
+                                        <h6 className="font-medium text-gray-700">
+                                            Produit {produitIndex + 1}
+                                        </h6>
+                                        {poste.produits.length > 1 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => removeProduitFromPoste(siteIndex, posteIndex, produitIndex)}
+                                                className="text-red-500 hover:text-red-700 text-sm"
+                                            >
+                                                Supprimer ce produit
+                                            </button>
+                                        )}
                                     </div>
-                                    
-                                    {sites.map((site, siteIndex) => (
-                                        <div key={siteIndex} className="bg-gray-50 rounded-lg p-6 border border-gray-200">
-                                            <div className="flex justify-between items-center mb-6">
-                                                <h4 className="text-lg font-medium text-[#26658C] flex items-center">
-                                                    <FaCheck className="mr-2" />
-                                                    Site: {site.nom_site || `Site ${siteIndex + 1}`}
-                                                </h4>
-                                                <span className="text-sm text-gray-500">
-                                                    {site.postes.length} poste(s)
-                                                </span>
-                                            </div>
-                                            
-                                            {/* Postes pour ce site */}
-                                            {site.postes.map((poste, posteIndex) => (
-                                                <div key={posteIndex} className="bg-white rounded-lg p-4 border border-gray-200 mb-4">
-                                                    <div className="flex justify-between items-center mb-4">
-                                                        <h5 className="font-medium text-[#26658C]">
-                                                            Poste {posteIndex + 1}
-                                                        </h5>
-                                                        {site.postes.length > 1 && (
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => removePosteFromSite(siteIndex, posteIndex)}
-                                                                className="text-red-500 hover:text-red-700 text-sm"
-                                                            >
-                                                                Supprimer ce poste
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                    
-                                                    <div className="space-y-4">
-                                                        <div>
-                                                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                                Nom du poste <span className="text-red-500">*</span>
-                                                            </label>
-                                                            <input
-                                                                type="text"
-                                                                value={poste.nom_poste}
-                                                                onChange={e => updatePosteInSite(siteIndex, posteIndex, 'nom_poste', e.target.value)}
-                                                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
-                                                                placeholder="Saisir nom du poste"
-                                                                required
-                                                            />
-                                                        </div>
-                                                        
-                                                        <div>
-                                                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                                Zone d'activité <span className="text-red-500">*</span>
-                                                            </label>
-                                                            <input
-                                                                type="text"
-                                                                value={poste.zone_activite}
-                                                                onChange={e => updatePosteInSite(siteIndex, posteIndex, 'zone_activite', e.target.value)}
-                                                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
-                                                                placeholder="Saisir zone d'activité"
-                                                                required
-                                                            />
-                                                        </div>
-                                                        
-                                                        {/* Champs côte à côte */}
-                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                            <div>
-                                                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                                    Personnes exposées <span className="text-red-500">*</span>
-                                                                </label>
-                                                                <input
-                                                                    type="number"
-                                                                    min="1"
-                                                                    value={poste.personnes_exposees}
-                                                                    onChange={e => {
-                                                                        const value = Math.max(1, parseInt(e.target.value) || 1);
-                                                                        updatePosteInSite(siteIndex, posteIndex, 'personnes_exposees', value);
-                                                                    }}
-                                                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
-                                                                    placeholder="Nombre de personnes"
-                                                                    required
-                                                                />
-                                                            </div>
-                                                            
-                                                            <div>
-                                                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                                    Durée du shift (heures) <span className="text-red-500">*</span>
-                                                                </label>
-                                                                <input
-                                                                    type="number"
-                                                                    min="1"
-                                                                    step="1"
-                                                                    value={poste.duree_shift}
-                                                                    onChange={e => {
-                                                                        const value = Math.max(1, parseInt(e.target.value) || 1);
-                                                                        updatePosteInSite(siteIndex, posteIndex, 'duree_shift', value);
-                                                                    }}
-                                                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
-                                                                    placeholder="Durée en heures"
-                                                                    required
-                                                                />
-                                                            </div>
-                                                            
-                                                            <div>
-                                                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                                    Durée exposition quotidienne (heures) <span className="text-red-500">*</span>
-                                                                </label>
-                                                                <input
-                                                                    type="number"
-                                                                    min="1"
-                                                                    step="1"
-                                                                    value={poste.duree_exposition_quotidienne}
-                                                                    onChange={e => {
-                                                                        const value = Math.max(1, parseInt(e.target.value) || 1);
-                                                                        updatePosteInSite(siteIndex, posteIndex, 'duree_exposition_quotidienne', value);
-                                                                    }}
-                                                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
-                                                                    placeholder="Durée exposition en heures"
-                                                                    required
-                                                                />
-                                                            </div>
-                                                            
-                                                            <div>
-                                                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                                    Nombre de shifts <span className="text-red-500">*</span>
-                                                                </label>
-                                                                <input
-                                                                    type="number"
-                                                                    min="1"
-                                                                    step="1"
-                                                                    value={poste.nb_shifts}
-                                                                    onChange={e => {
-                                                                        const value = Math.max(1, parseInt(e.target.value) || 1);
-                                                                        updatePosteInSite(siteIndex, posteIndex, 'nb_shifts', value);
-                                                                    }}
-                                                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
-                                                                    placeholder="Nombre de shifts par jour"
-                                                                    required
-                                                                />
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    
-                                                    {/* Composants à analyser */}
-                                                    <div className="mt-4">
-                                                        <PosteComposants 
-                                                            poste={poste} 
-                                                            index={posteIndex}
-                                                            siteIndex={siteIndex}
-                                                            toggleComposant={toggleComposantInSite}
-                                                            updatePoste={updatePosteInSite}
-                                                        />
-                                                    </div>
-                                                </div>
-                                            ))}
-                                            
-                                            {/* Bouton pour ajouter un poste à ce site */}
-                                            <div className="flex justify-start mt-4">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => addPosteToSite(siteIndex)}
-                                                    className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 transition duration-200 flex items-center space-x-2 text-sm"
-                                                >
-                                                    <FaPlus className="w-3 h-3" />
-                                                    <span>Ajouter un poste à ce site</span>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ))}
-                                    
-                                    {/* Boutons de navigation */}
-                                    <div className="flex justify-between pt-8">
-                                        <button
-                                            type="button"
-                                            onClick={prevStep}
-                                            className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 transition duration-200 flex items-center space-x-2 font-medium"
-                                        >
-                                            <FaArrowLeft className="w-4 h-4" />
-                                            <span>Précédent</span>
-                                        </button>
-                                        <button
-                                            type="submit"
-                                            disabled={processing}
-                                            className="px-8 py-3 bg-[#26658C] text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-[#26658C] transition duration-200 flex items-center space-x-2 font-medium shadow-lg"
-                                        >
-                                            {processing ? (
-                                                <>
-                                                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                                                    <span>Soumission...</span>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <FaPaperPlane className="w-5 h-5" />
-                                                    <span className="text-lg">Soumettre la Demande</span>
-                                                </>
-                                            )}
-                                        </button>
+                                    <div className="p-4">
+                                        <ProduitComposants 
+                                            produit={produit}
+                                            index={produitIndex}
+                                            posteIndex={posteIndex}
+                                            siteIndex={siteIndex}
+                                            toggleComposant={toggleComposantInProduit}
+                                            updateProduit={updateProduitInPoste}
+                                        />
                                     </div>
                                 </div>
-                            )}
+                            ))}
+                            
+                            {/* Bouton pour ajouter un produit */}
+                            <div className="flex justify-start mt-4">
+                                <button
+                                    type="button"
+                                    onClick={() => addProduitToPoste(siteIndex, posteIndex)}
+                                    className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 transition duration-200 flex items-center space-x-2 text-sm"
+                                >
+                                    <FaPlus className="w-3 h-3" />
+                                    <span>Ajouter un produit</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                ))}
+                
+                {/* Bouton pour ajouter un poste à ce site */}
+                <div className="flex justify-start mt-4">
+                    <button
+                        type="button"
+                        onClick={() => addPosteToSite(siteIndex)}
+                        className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 transition duration-200 flex items-center space-x-2 text-sm"
+                    >
+                        <FaPlus className="w-3 h-3" />
+                        <span>Ajouter un poste à ce site</span>
+                    </button>
+                </div>
+            </div>
+        ))}
+        
+        {/* Boutons de navigation */}
+        <div className="flex justify-between pt-8">
+            <button
+                type="button"
+                onClick={prevStep}
+                className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 transition duration-200 flex items-center space-x-2 font-medium"
+            >
+                <FaArrowLeft className="w-4 h-4" />
+                <span>Précédent</span>
+            </button>
+            <button
+                type="submit"
+                disabled={processing}
+                className="px-8 py-3 bg-[#26658C] text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-[#26658C] transition duration-200 flex items-center space-x-2 font-medium shadow-lg"
+            >
+                {processing ? (
+                    <>
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                        <span>Soumission...</span>
+                    </>
+                ) : (
+                    <>
+                        <FaPaperPlane className="w-5 h-5" />
+                        <span className="text-lg">Soumettre la Demande</span>
+                    </>
+                )}
+            </button>
+        </div>
+    </div>
+)}
                         </form>
                     </div>
                 </div>

@@ -1,5 +1,6 @@
 <?php
 // app/Models/Composant.php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -9,15 +10,21 @@ class Composant extends Model
 {
     use HasFactory;
 
-     protected $fillable = ['nom', 'cas_number', 'famille_id', 'cout_analyse'];
+    protected $fillable = [
+        'nom',
+        'cas_number',
+        'cout_analyse',
+        'famille_id'
+    ];
 
-    public function postes()
+    // Nouvelle relation avec produits
+    public function produits()
     {
-        return $this->belongsToMany(Poste::class, 'poste_composant');
+        return $this->belongsToMany(Produit::class, 'produit_composant');
     }
+
     public function famille()
     {
         return $this->belongsTo(Famille::class);
     }
-
 }
