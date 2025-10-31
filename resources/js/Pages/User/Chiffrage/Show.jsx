@@ -1,14 +1,14 @@
 // resources/js/Pages/User/Chiffrage/Show.jsx
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link } from '@inertiajs/react';
-import { FaArrowLeft, FaCalculator, FaBuilding, FaMapMarkerAlt, FaBox, FaList, FaFileAlt } from 'react-icons/fa';
+import { FaArrowLeft, FaCalculator, FaBuilding, FaMapMarkerAlt, FaBox, FaList, FaFileAlt, FaGlobe } from 'react-icons/fa';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
 export default function Show({ auth, demande }) {
   const [coutDetails, setCoutDetails] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('devis'); // 'devis' ou 'produits'
+  const [activeTab, setActiveTab] = useState('devis'); // 'devis', 'sites', ou 'produits'
 
   useEffect(() => {
     const fetchCoutDetails = async () => {
@@ -102,6 +102,135 @@ export default function Show({ auth, demande }) {
     return tousLesProduits;
   };
 
+  // 🔹 COMPOSANT POUR L'ONGLET SITES
+// 🔹 COMPOSANT POUR L'ONGLET SITES - CORRIGÉ
+const SitesTab = () => {
+  // 🔹 CORRECTION : Vérifier que detail_sites existe et a des données
+  if (!coutDetails.detail?.detail_sites || coutDetails.detail.detail_sites.length === 0) {
+    return (
+      <div className="bg-white border border-gray-200 rounded-sm">
+        <div className="bg-gray-50 border-b border-gray-200 px-6 py-4">
+          <div className="flex items-center space-x-3">
+            <FaGlobe className="text-[#26658C] w-5 h-5" />
+            <h2 className="text-lg font-semibold text-gray-900">Détail par Site</h2>
+          </div>
+        </div>
+        <div className="p-6 text-center">
+          <div className="text-gray-500 py-8">
+            <FaBuilding className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+            <p>Aucun détail de site disponible</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-sm">
+      {/* En-tête Sites */}
+      <div className="bg-gray-50 border-b border-gray-200 px-6 py-4">
+        <div className="flex items-center space-x-3">
+          <FaGlobe className="text-[#26658C] w-5 h-5" />
+          <h2 className="text-lg font-semibold text-gray-900">Détail par Site</h2>
+        </div>
+      </div>
+
+      <div className="p-6 space-y-6">
+        {/* Détail des coûts par site */}
+        <div className="overflow-x-auto">
+          <h3 className="text-md font-semibold text-gray-900 mb-3 flex items-center">
+            <FaBuilding className="w-4 h-4 mr-2 text-gray-500" />
+            Coûts Fixes par Site
+          </h3>
+          <table className="w-full border-collapse text-sm border border-gray-200">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Site</th>
+                <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Ville</th>
+                <th className="border border-gray-300 px-3 py-2 text-right font-medium text-gray-700">Rapport (C4)</th>
+                <th className="border border-gray-300 px-3 py-2 text-right font-medium text-gray-700">Logistique (C5)</th>
+                <th className="border border-gray-300 px-3 py-2 text-right font-medium text-gray-700">Déplacement (C6)</th>
+                <th className="border border-gray-300 px-3 py-2 text-right font-medium text-gray-700">Total Site</th>
+                <th className="border border-gray-300 px-3 py-2 text-center font-medium text-gray-700">Postes</th>
+              </tr>
+            </thead>
+            <tbody>
+              {coutDetails.detail.detail_sites.map((site, index) => {
+                // 🔹 CORRECTION : S'assurer que toutes les valeurs sont des nombres
+                const c4 = Number(site.C4_rapport) || 0;
+                const c5 = Number(site.C5_logistique) || 0;
+                const c6 = Number(site.C6_deplacement) || 0;
+                const totalSite = c4 + c5 + c6;
+                
+                return (
+                  <tr key={index} className={index % 2 === 0 ? 'hover:bg-gray-50' : 'hover:bg-gray-50 bg-gray-50'}>
+                    <td className="border border-gray-300 px-3 py-2 font-medium text-gray-900">
+                      <div className="flex items-center space-x-2">
+                        <FaBuilding className="text-gray-400 w-4 h-4" />
+                        <span>{site.site || 'Site non spécifié'}</span>
+                      </div>
+                    </td>
+                    <td className="border border-gray-300 px-3 py-2">
+                      <div className="flex items-center space-x-2">
+                        <FaMapMarkerAlt className="text-gray-400 w-3 h-3" />
+                        <span className="text-sm">{site.ville || 'Ville non spécifiée'}</span>
+                      </div>
+                    </td>
+                    <td className="border border-gray-300 px-3 py-2 text-right font-semibold text-blue-600">
+                      {formatCurrency(c4)}
+                    </td>
+                    <td className="border border-gray-300 px-3 py-2 text-right font-semibold text-blue-600">
+                      {formatCurrency(c5)}
+                    </td>
+                    <td className="border border-gray-300 px-3 py-2 text-right font-semibold text-blue-600">
+                      {formatCurrency(c6)}
+                    </td>
+                    <td className="border border-gray-300 px-3 py-2 text-right font-bold text-[#26658C]">
+                      {formatCurrency(totalSite)}
+                    </td>
+                    <td className="border border-gray-300 px-3 py-2 text-center font-medium">
+                      {site.nombre_postes || 0}
+                    </td>
+                  </tr>
+                );
+              })}
+              
+              {/* Total des sites */}
+              <tr className="bg-blue-50 hover:bg-blue-100">
+                <td 
+                  className="border border-gray-300 px-3 py-2 font-bold text-gray-900" 
+                  colSpan="2"
+                >
+                  TOTAL SITES
+                </td>
+                <td className="border border-gray-300 px-3 py-2 text-right font-bold text-blue-700">
+                  {formatCurrency(coutDetails.detail.C4_rapport_total || 0)}
+                </td>
+                <td className="border border-gray-300 px-3 py-2 text-right font-bold text-blue-700">
+                  {formatCurrency(coutDetails.detail.C5_logistique_total || 0)}
+                </td>
+                <td className="border border-gray-300 px-3 py-2 text-right font-bold text-blue-700">
+                  {formatCurrency(coutDetails.detail.C6_deplacement_total || 0)}
+                </td>
+                <td className="border border-gray-300 px-3 py-2 text-right font-bold text-[#26658C] text-lg">
+                  {formatCurrency(
+                    (coutDetails.detail.C4_rapport_total || 0) + 
+                    (coutDetails.detail.C5_logistique_total || 0) + 
+                    (coutDetails.detail.C6_deplacement_total || 0)
+                  )}
+                </td>
+                <td className="border border-gray-300 px-3 py-2 text-center font-bold">
+                  {coutDetails.detail.nombre_postes_total || 0}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+  );
+};
   // 🔹 COMPOSANT POUR L'ONGLET DEVIS
   const DevisTab = () => (
     <div className="bg-white border border-gray-200 rounded-sm">
@@ -130,56 +259,48 @@ export default function Show({ auth, demande }) {
             </thead>
             <tbody>
               <tr className="hover:bg-gray-50">
-                <td className="border border-gray-300 px-3 py-2 font-medium">Rapport (C4)</td>
+                <td className="border border-gray-300 px-3 py-2 font-medium">Rapport Total (C4)</td>
                 <td className="border border-gray-300 px-3 py-2 text-right font-semibold text-[#26658C]">
-                  {formatCurrency(coutDetails.detail.C4_rapport || 200)}
+                  {formatCurrency(coutDetails.detail.C4_rapport_total || 0)}
                 </td>
-                <td className="border border-gray-300 px-3 py-2 text-gray-600 text-sm">Coût fixe par affaire</td>
+                <td className="border border-gray-300 px-3 py-2 text-gray-600 text-sm">
+                  {coutDetails.detail.nombre_sites || 0} site(s) × 200 MAD
+                </td>
               </tr>
               <tr className="hover:bg-gray-50 bg-gray-50">
-                <td className="border border-gray-300 px-3 py-2 font-medium">Logistique (C5)</td>
+                <td className="border border-gray-300 px-3 py-2 font-medium">Logistique Total (C5)</td>
                 <td className="border border-gray-300 px-3 py-2 text-right font-semibold text-[#26658C]">
-                  {formatCurrency(coutDetails.detail.C5_logistique || 300)}
+                  {formatCurrency(coutDetails.detail.C5_logistique_total || 0)}
                 </td>
-                <td className="border border-gray-300 px-3 py-2 text-gray-600 text-sm">Coût fixe par dossier</td>
+                <td className="border border-gray-300 px-3 py-2 text-gray-600 text-sm">
+                  {coutDetails.detail.nombre_sites || 0} site(s) × 300 MAD
+                </td>
+              </tr>
+              <tr className="hover:bg-gray-50">
+                <td className="border border-gray-300 px-3 py-2 font-medium">Déplacement Total (C6)</td>
+                <td className="border border-gray-300 px-3 py-2 text-right font-semibold text-[#26658C]">
+                  {formatCurrency(coutDetails.detail.C6_deplacement_total || 0)}
+                </td>
+                <td className="border border-gray-300 px-3 py-2 text-gray-600 text-sm">
+                  Frais uniques par ville
+                </td>
+              </tr>
+              <tr className="bg-blue-50 hover:bg-blue-100">
+                <td className="border border-gray-300 px-3 py-2 font-bold">Total Coûts Fixes</td>
+                <td className="border border-gray-300 px-3 py-2 text-right font-bold text-[#26658C]">
+                  {formatCurrency(
+                    (coutDetails.detail.C4_rapport_total || 0) + 
+                    (coutDetails.detail.C5_logistique_total || 0) + 
+                    (coutDetails.detail.C6_deplacement_total || 0)
+                  )}
+                </td>
+                <td className="border border-gray-300 px-3 py-2 text-gray-600 text-sm font-medium">
+                  C4 + C5 + C6
+                </td>
               </tr>
             </tbody>
           </table>
         </div>
-
-        {/* Détail des frais de déplacement */}
-        {coutDetails.detail.C6_villes_uniques && coutDetails.detail.C6_villes_uniques.length > 0 && (
-          <div className="overflow-x-auto">
-            <h3 className="text-md font-semibold text-gray-900 mb-3 flex items-center">
-              <FaMapMarkerAlt className="w-4 h-4 mr-2 text-gray-500" />
-              Frais de Déplacement
-            </h3>
-            <table className="w-full border-collapse text-sm border border-gray-200">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Ville</th>
-                  <th className="border border-gray-300 px-3 py-2 text-right font-medium text-gray-700">Frais</th>
-                </tr>
-              </thead>
-              <tbody>
-                {coutDetails.detail.C6_villes_uniques.map((ville, index) => (
-                  <tr key={index} className={index % 2 === 0 ? 'hover:bg-gray-50' : 'hover:bg-gray-50 bg-gray-50'}>
-                    <td className="border border-gray-300 px-3 py-2 font-medium">{ville.ville}</td>
-                    <td className="border border-gray-300 px-3 py-2 text-right font-semibold text-[#26658C]">
-                      {formatCurrency(ville.frais_deplacement)}
-                    </td>
-                  </tr>
-                ))}
-                <tr className="bg-blue-50 hover:bg-blue-100">
-                  <td className="border border-gray-300 px-3 py-2 font-bold">Total Déplacement (C6)</td>
-                  <td className="border border-gray-300 px-3 py-2 text-right font-bold text-[#26658C]">
-                    {formatCurrency(coutDetails.detail.C6_deplacement_total || 0)}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        )}
 
         {/* Détail par Poste avec Produits */}
         <div className="overflow-x-auto">
@@ -304,7 +425,7 @@ export default function Show({ auth, demande }) {
           )}
         </div>
 
-      
+        
 
         {/* Total Général */}
         <div className="overflow-x-auto">
@@ -466,7 +587,6 @@ export default function Show({ auth, demande }) {
           <h1 className="text-2xl font-bold text-gray-900">Détails de la demande</h1>
           <p className="text-gray-600 mt-1">Code: {demande.code_affaire}</p>
           <span className="text-gray-700">{demande.matrice.label}</span>
-          
         </div>
       </div>
 
@@ -478,7 +598,6 @@ export default function Show({ auth, demande }) {
               <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Informations Entreprise</th>
               <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Sites d'Intervention</th>
               <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Contact Demande</th>
-             
             </tr>
           </thead>
           <tbody>
@@ -553,6 +672,20 @@ export default function Show({ auth, demande }) {
               <span>Détail du Devis</span>
             </button>
             <button
+              onClick={() => setActiveTab('sites')}
+              className={`py-3 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 transition-colors ${
+                activeTab === 'sites'
+                  ? 'border-[#26658C] text-[#26658C]'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <FaGlobe className="w-4 h-4" />
+              <span>Détail par Site</span>
+              <span className="bg-gray-200 text-gray-700 px-2 py-1 rounded-full text-xs">
+                {demande.sites?.length || 0}
+              </span>
+            </button>
+            <button
               onClick={() => setActiveTab('produits')}
               className={`py-3 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 transition-colors ${
                 activeTab === 'produits'
@@ -572,7 +705,9 @@ export default function Show({ auth, demande }) {
 
       {/* CONTENU DES ONGLETS */}
       {!loading && coutDetails ? (
-        activeTab === 'devis' ? <DevisTab /> : <ProduitsTab />
+        activeTab === 'devis' ? <DevisTab /> : 
+        activeTab === 'sites' ? <SitesTab /> : 
+        <ProduitsTab />
       ) : (
         <div className="bg-white border border-gray-200 rounded-sm p-12 text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#26658C] mx-auto"></div>
