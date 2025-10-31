@@ -253,7 +253,7 @@ export default function Show({ auth, demande }) {
                           {composant.cas_number && (
                             <span className="text-gray-500"> ({composant.cas_number})</span>
                           )}
-                          <span className="text-[#26658C] ml-2">{formatCurrency(composant.cout_analyse)}</span>
+                        
                         </div>
                       ))}
                     </div>
