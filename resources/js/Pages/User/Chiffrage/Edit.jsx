@@ -4,230 +4,14 @@ import { Head, useForm, usePage, router } from '@inertiajs/react';
 import Select from 'react-select';
 import { useState, useEffect, useCallback } from 'react';
 import axios from "axios";
+import ProduitComposants from './ProduitComposants';
 import Swal from 'sweetalert2';
 import { FaCheck, FaArrowRight, FaArrowLeft, FaPlus, FaPaperPlane, FaSave } from 'react-icons/fa';
-
-// 🔹 COMPOSANT POSTE COMPOSANTS COMMUN
-function PosteComposants({ poste, index, siteIndex, toggleComposant, updatePoste }) {
-    const [composants, setComposants] = useState([]);
-    const [searchNom, setSearchNom] = useState('');
-    const [searchCas, setSearchCas] = useState('');
-    const [loading, setLoading] = useState(false);
-    
-    // États séparés pour les selects
-    const [selectedNom, setSelectedNom] = useState([]);
-    const [selectedCas, setSelectedCas] = useState([]);
-    
-    // 🔹 État pour le produit
-    const [produit, setProduit] = useState(poste.produit || '');
-
-    // 🔹 Charger les composants
-    useEffect(() => {
-        const delayDebounceFn = setTimeout(() => {
-            if (searchNom.length >= 2 || searchCas.length >= 2 || (searchNom.length === 0 && searchCas.length === 0)) {
-                setLoading(true);
-                axios.get('/api/composants', { 
-                    params: { 
-                        search: searchNom || searchCas,
-                        search_type: searchNom ? 'nom' : 'cas'
-                    } 
-                })
-                .then(res => {
-                    setComposants(res.data);
-                    setLoading(false);
-                })
-                .catch(error => {
-                    console.error('Erreur chargement composants:', error);
-                    setComposants([]);
-                    setLoading(false);
-                });
-            }
-        }, 300);
-
-        return () => clearTimeout(delayDebounceFn);
-    }, [searchNom, searchCas]);
-
-    // 🔹 Options pour le select par nom
-    const nomOptions = composants.map(c => ({
-        value: c.id,
-        label: c.nom,
-        nom: c.nom,
-        cas: c.cas_number
-    }));
-
-    // 🔹 Options pour le select par CAS
-    const casOptions = composants
-        .filter(c => c.cas_number)
-        .map(c => ({
-            value: c.id,
-            label: c.cas_number,
-            nom: c.nom,
-            cas: c.cas_number
-        }));
-
-    // 🔹 Gérer la sélection par nom
-    const handleNomChange = (selected) => {
-        const selectedIds = selected ? selected.map(s => s.value) : [];
-        setSelectedNom(selected || []);
-        
-        const correspondingCas = selected ? selected.map(s => 
-            casOptions.find(cas => cas.value === s.value)
-        ).filter(Boolean) : [];
-        setSelectedCas(correspondingCas);
-        
-        // Inclure siteIndex dans l'appel
-        toggleComposant(siteIndex, index, selectedIds, produit);
-    };
-
-    // 🔹 Gérer la sélection par CAS
-    const handleCasChange = (selected) => {
-        const selectedIds = selected ? selected.map(s => s.value) : [];
-        setSelectedCas(selected || []);
-        
-        // Synchroniser le select nom
-        const correspondingNoms = selected ? selected.map(s => 
-            nomOptions.find(nom => nom.value === s.value)
-        ).filter(Boolean) : [];
-        setSelectedNom(correspondingNoms);
-        
-        // Mettre à jour les composants du poste
-        toggleComposant(siteIndex, index, selectedIds, produit);
-    };
-
-    // 🔹 Gérer le changement de produit
-    const handleProduitChange = (e) => {
-        const newProduit = e.target.value;
-        setProduit(newProduit);
-        
-        // Récupérer les IDs actuellement sélectionnés
-        const selectedIds = selectedNom.map(item => item.value);
-        
-        // Mettre à jour les composants avec le nouveau produit
-        toggleComposant(siteIndex, index, selectedIds, newProduit);
-    };
-
-    // 🔹 Gérer le changement de description
-    const handleDescriptionChange = (e) => {
-        updatePoste(siteIndex, index, 'description', e.target.value);
-    };
-
-    // 🔹 Initialiser les selects avec les valeurs existantes
-    useEffect(() => {
-        if (composants.length > 0 && poste.composants && poste.composants.length > 0) {
-            const initialSelected = nomOptions.filter(option => 
-                poste.composants.includes(option.value)
-            );
-            setSelectedNom(initialSelected);
-            
-            const initialCasSelected = casOptions.filter(option => 
-                poste.composants.includes(option.value)
-            );
-            setSelectedCas(initialCasSelected);
-        }
-        
-        // Initialiser le produit
-        if (poste.produit) {
-            setProduit(poste.produit);
-        }
-    }, [composants, poste.composants, poste.produit]);
-
-    return (
-        <div className="space-y-4">
-            {/* 🔹 Champ Produit */}
-            <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Produit <span className="text-red-500">*</span>
-                </label>
-                <input
-                    type="text"
-                    value={produit}
-                    onChange={handleProduitChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
-                    placeholder="Saisir le nom du produit à analyser"
-                    required
-                />
-            </div>
-
-            {/* 🔹 DESCRIPTION */}
-            <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Description <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                    value={poste.description}
-                    onChange={handleDescriptionChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
-                    rows="3"
-                    placeholder="Décrire les opérations réalisées"
-                    required
-                />
-            </div>
-
-            {/* Select par nom */}
-            <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Nom du composant à analyser
-                </label>
-                <Select
-                    options={nomOptions}
-                    isMulti
-                    onInputChange={value => setSearchNom(value)}
-                    onChange={handleNomChange}
-                    value={selectedNom}
-                    placeholder="Rechercher par nom..."
-                    noOptionsMessage={({ inputValue }) => 
-                        inputValue ? "Aucun composant trouvé" : "Tapez pour rechercher..."
-                    }
-                    isLoading={loading}
-                    loadingMessage={() => "Chargement..."}
-                    className="react-select-container mb-3"
-                    classNamePrefix="react-select"
-                    formatOptionLabel={({ nom, cas }) => (
-                        <div className="flex flex-col">
-                            <span className="font-medium">{nom}</span>
-                            {cas && (
-                                <span className="text-xs text-gray-500">CAS: {cas}</span>
-                            )}
-                        </div>
-                    )}
-                />
-            </div>
-
-            {/* Select par CAS */}
-            <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Numéro CAS du composant à analyser
-                </label>
-                <Select
-                    options={casOptions}
-                    isMulti
-                    onInputChange={value => setSearchCas(value)}
-                    onChange={handleCasChange}
-                    value={selectedCas}
-                    placeholder="Rechercher par CAS..."
-                    noOptionsMessage={({ inputValue }) => 
-                        inputValue ? "Aucun composant trouvé" : "Tapez pour rechercher..."
-                    }
-                    isLoading={loading}
-                    loadingMessage={() => "Chargement..."}
-                    className="react-select-container"
-                    classNamePrefix="react-select"
-                    formatOptionLabel={({ nom, cas }) => (
-                        <div className="flex flex-col">
-                            <span className="font-medium">{cas}</span>
-                            <span className="text-xs text-gray-500">Nom: {nom}</span>
-                        </div>
-                    )}
-                />
-            </div>
-        </div>
-    );
-}
 
 export default function Edit({ auth, demande, matrices, villes }) {
     const [currentStep, setCurrentStep] = useState(1);
     
-    // 🔹 Initialiser les données depuis la demande existante avec plusieurs sites
+    // 🔹 Initialiser les données depuis la demande existante avec plusieurs sites et produits
     const [sites, setSites] = useState(
         demande.sites && demande.sites.length > 0 
             ? demande.sites.map(site => ({
@@ -239,23 +23,32 @@ export default function Edit({ auth, demande, matrices, villes }) {
                     id: poste.id,
                     nom_poste: poste.nom_poste,
                     zone_activite: poste.zone_activite,
-                    description: poste.description,
                     personnes_exposees: poste.personnes_exposees,
                     duree_shift: poste.duree_shift,
                     duree_exposition_quotidienne: poste.duree_exposition_quotidienne,
                     nb_shifts: poste.nb_shifts,
-                    produit: poste.produit || '',
-                    composants: poste.composants ? poste.composants.map(c => c.id) : []
+                    produits: poste.produits ? poste.produits.map(produit => ({
+                        id: produit.id,
+                        nom: produit.nom,
+                        description: produit.description,
+                        composants: produit.composants ? produit.composants.map(c => c.id) : []
+                    })) : [{
+                        nom: '',
+                        description: '',
+                        composants: []
+                    }]
                 })) : [{
                     nom_poste: '', 
                     zone_activite: '', 
-                    description: '', 
                     personnes_exposees: '', 
                     duree_shift: '',
                     duree_exposition_quotidienne: '',
                     nb_shifts: '',
-                    produit: '',
-                    composants: []
+                    produits: [{
+                        nom: '',
+                        description: '',
+                        composants: []
+                    }]
                 }]
             }))
             : [{
@@ -266,23 +59,32 @@ export default function Edit({ auth, demande, matrices, villes }) {
                     id: poste.id,
                     nom_poste: poste.nom_poste,
                     zone_activite: poste.zone_activite,
-                    description: poste.description,
                     personnes_exposees: poste.personnes_exposees,
                     duree_shift: poste.duree_shift,
                     duree_exposition_quotidienne: poste.duree_exposition_quotidienne,
                     nb_shifts: poste.nb_shifts,
-                    produit: poste.produit || '',
-                    composants: poste.composants ? poste.composants.map(c => c.id) : []
+                    produits: poste.produits ? poste.produits.map(produit => ({
+                        id: produit.id,
+                        nom: produit.nom,
+                        description: produit.description,
+                        composants: produit.composants ? produit.composants.map(c => c.id) : []
+                    })) : [{
+                        nom: '',
+                        description: '',
+                        composants: []
+                    }]
                 })) : [{
                     nom_poste: '', 
                     zone_activite: '', 
-                    description: '', 
                     personnes_exposees: '', 
                     duree_shift: '',
                     duree_exposition_quotidienne: '',
                     nb_shifts: '',
-                    produit: '',
-                    composants: []
+                    produits: [{
+                        nom: '',
+                        description: '',
+                        composants: []
+                    }]
                 }]
             }]
     );
@@ -321,13 +123,15 @@ export default function Edit({ auth, demande, matrices, villes }) {
         newSites[siteIndex].postes.push({
             nom_poste: '', 
             zone_activite: '', 
-            description: '', 
             personnes_exposees: '', 
             duree_shift: '',
             duree_exposition_quotidienne: '',
             nb_shifts: '',
-            produit: '',
-            composants: []
+            produits: [{
+                nom: '',
+                description: '',
+                composants: []
+            }]
         });
         setSites(newSites);
     };
@@ -348,13 +152,37 @@ export default function Edit({ auth, demande, matrices, villes }) {
         setSites(newSites);
     };
 
-    // Fonction pour gérer les composants d'un poste dans un site
-    const toggleComposantInSite = (siteIndex, posteIndex, composantIds, produit = '') => {
+    // Fonction pour ajouter un produit à un poste spécifique
+    const addProduitToPoste = (siteIndex, posteIndex) => {
         const newSites = [...sites];
-        newSites[siteIndex].postes[posteIndex].composants = composantIds;
-        if (produit !== '') {
-            newSites[siteIndex].postes[posteIndex].produit = produit;
+        newSites[siteIndex].postes[posteIndex].produits.push({
+            nom: '',
+            description: '',
+            composants: []
+        });
+        setSites(newSites);
+    };
+
+    // Fonction pour supprimer un produit d'un poste spécifique
+    const removeProduitFromPoste = (siteIndex, posteIndex, produitIndex) => {
+        const newSites = [...sites];
+        if (newSites[siteIndex].postes[posteIndex].produits.length > 1) {
+            newSites[siteIndex].postes[posteIndex].produits.splice(produitIndex, 1);
+            setSites(newSites);
         }
+    };
+
+    // Fonction pour mettre à jour un produit dans un poste
+    const updateProduitInPoste = (siteIndex, posteIndex, produitIndex, field, value) => {
+        const newSites = [...sites];
+        newSites[siteIndex].postes[posteIndex].produits[produitIndex][field] = value;
+        setSites(newSites);
+    };
+
+    // Fonction pour gérer les composants d'un produit
+    const toggleComposantInProduit = (siteIndex, posteIndex, produitIndex, composantIds) => {
+        const newSites = [...sites];
+        newSites[siteIndex].postes[posteIndex].produits[produitIndex].composants = composantIds;
         setSites(newSites);
     };
 
@@ -449,16 +277,18 @@ export default function Edit({ auth, demande, matrices, villes }) {
             nom_site: '', 
             ville_id: '',
             code_site: '',
-            postes: [{  // Nouveau site avec un poste vide
+            postes: [{
                 nom_poste: '', 
                 zone_activite: '', 
-                description: '', 
                 personnes_exposees: '', 
                 duree_shift: '',
                 duree_exposition_quotidienne: '',
                 nb_shifts: '',
-                produit: '',
-                composants: []
+                produits: [{
+                    nom: '',
+                    description: '',
+                    composants: []
+                }]
             }]
         }];
         setSites(newSites);
@@ -960,15 +790,58 @@ export default function Edit({ auth, demande, matrices, villes }) {
                                                         </div>
                                                     </div>
                                                     
-                                                    {/* Composants à analyser */}
-                                                    <div className="mt-4">
-                                                        <PosteComposants 
-                                                            poste={poste} 
-                                                            index={posteIndex}
-                                                            siteIndex={siteIndex}
-                                                            toggleComposant={toggleComposantInSite}
-                                                            updatePoste={updatePosteInSite}
-                                                        />
+                                                    {/* PRODUITS à analyser */}
+                                                    <div className="mt-6">
+                                                        <div className="flex justify-between items-center mb-4">
+                                                            <h6 className="text-lg font-medium text-[#26658C]">
+                                                                Produits à analyser
+                                                            </h6>
+                                                            <span className="text-sm text-gray-500">
+                                                                {poste.produits?.length || 0} produit(s)
+                                                            </span>
+                                                        </div>
+                                                        
+                                                        {/* Liste des produits */}
+                                                        {poste.produits?.map((produit, produitIndex) => (
+                                                            <div key={produitIndex} className="mb-4 border border-gray-200 rounded-lg">
+                                                                <div className="flex justify-between items-center bg-gray-100 px-4 py-2">
+                                                                    <h6 className="font-medium text-gray-700">
+                                                                        Produit {produitIndex + 1}
+                                                                    </h6>
+                                                                    {poste.produits.length > 1 && (
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => removeProduitFromPoste(siteIndex, posteIndex, produitIndex)}
+                                                                            className="text-red-500 hover:text-red-700 text-sm"
+                                                                        >
+                                                                            Supprimer ce produit
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                                <div className="p-4">
+                                                                    <ProduitComposants 
+                                                                        produit={produit}
+                                                                        index={produitIndex}
+                                                                        posteIndex={posteIndex}
+                                                                        siteIndex={siteIndex}
+                                                                        toggleComposant={toggleComposantInProduit}
+                                                                        updateProduit={updateProduitInPoste}
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                        
+                                                        {/* Bouton pour ajouter un produit */}
+                                                        <div className="flex justify-start mt-4">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => addProduitToPoste(siteIndex, posteIndex)}
+                                                                className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 transition duration-200 flex items-center space-x-2 text-sm"
+                                                            >
+                                                                <FaPlus className="w-3 h-3" />
+                                                                <span>Ajouter un produit</span>
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             ))}
