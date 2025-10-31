@@ -347,15 +347,23 @@ public function destroy(Demande $demande)
             ->where('data->demande_id', $demande->id)
             ->delete();
 
-        // 2. Supprimer les composants associés aux postes (table pivot)
-        foreach ($demande->postes as $poste) {
-            $poste->composants()->detach();
+        // 2. NOUVELLE LOGIQUE : Supprimer les composants associés aux PRODUITS (table pivot produit_composant)
+        foreach ($demande->sites as $site) {
+            foreach ($site->postes as $poste) {
+                foreach ($poste->produits as $produit) {
+                    // Détacher les composants du produit
+                    $produit->composants()->detach();
+                    // Supprimer le produit
+                    $produit->delete();
+                }
+                // Supprimer le poste
+                $poste->delete();
+            }
+            // Supprimer le site
+            $site->delete();
         }
 
-        // 3. Supprimer les postes
-        $demande->postes()->delete();
-
-        // 4. Supprimer la demande
+        // 3. Supprimer la demande
         $demande->delete();
 
         DB::commit();
