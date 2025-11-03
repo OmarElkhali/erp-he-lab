@@ -523,7 +523,7 @@ const SitesTab = () => {
                         {produit.duree_shift}h
                       </td>
                       <td className="border border-gray-300 px-3 py-2 text-center text-gray-700">
-                        {produit.duree_exposition_quotidienne}h
+                        {produit.duree_exposition_quotidienne}
                       </td>
                       <td className="border border-gray-300 px-3 py-2 text-center font-medium text-gray-900">
                         {produit.nb_shifts}

@@ -750,24 +750,38 @@ export default function Edit({ auth, demande, matrices, villes }) {
                                                                 />
                                                             </div>
                                                             
-                                                            <div>
-                                                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                                    Durée exposition quotidienne (heures) <span className="text-red-500">*</span>
-                                                                </label>
-                                                                <input
-                                                                    type="number"
-                                                                    min="1"
-                                                                    step="1"
-                                                                    value={poste.duree_exposition_quotidienne}
-                                                                    onChange={e => {
-                                                                        const value = Math.max(1, parseInt(e.target.value) || 1);
-                                                                        updatePosteInSite(siteIndex, posteIndex, 'duree_exposition_quotidienne', value);
-                                                                    }}
-                                                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
-                                                                    placeholder="Durée exposition en heures"
-                                                                    required
-                                                                />
-                                                            </div>
+                                                            
+                                <div>
+    <label className="block text-sm font-medium text-gray-700 mb-2">
+        Durée exposition quotidienne <span className="text-red-500">*</span>
+    </label>
+    <div className="relative">
+        <input
+            type="number"
+            min="0.25"
+            max="24"
+            step="0.25"
+            value={poste.duree_exposition_quotidienne || ''}
+            onChange={e => {
+                const value = Math.max(0.25, Math.min(24, parseFloat(e.target.value) || 0.25));
+                updatePosteInSite(siteIndex, posteIndex, 'duree_exposition_quotidienne', value);
+            }}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26658C] focus:border-transparent transition duration-200"
+            placeholder=" Durée exposition quotidienne "
+            required
+            title="Utilisez des décimales: 0.25=15min, 0.5=30min, 0.75=45min"
+        />
+    </div>
+    <div className="text-xs text-gray-500 mt-1 flex justify-between">
+        <span>Minimum: 0.25 (15 minutes)</span>
+        <span>
+            {poste.duree_exposition_quotidienne ? 
+                `${Math.floor(poste.duree_exposition_quotidienne)}h ${Math.floor((poste.duree_exposition_quotidienne % 1) * 60)}min` 
+                : '0h 0min'
+            }
+        </span>
+    </div>
+                                </div>
                                                             
                                                             <div>
                                                                 <label className="block text-sm font-medium text-gray-700 mb-2">
