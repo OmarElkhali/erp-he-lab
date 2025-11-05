@@ -244,127 +244,124 @@ const SitesTab = () => {
 
       <div className="p-6 space-y-6">
         {/* Détail par Poste avec Produits */}
-        <div className="overflow-x-auto">
-          <h3 className="text-md font-semibold text-gray-900 mb-3 flex items-center">
-            <FaList className="w-4 h-4 mr-2 text-gray-500" />
-            Détail par Poste et Produit ({coutDetails.detail.detail_postes?.length || 0} poste(s))
-          </h3>
-          
-          {coutDetails.detail.detail_postes && coutDetails.detail.detail_postes.length > 0 ? (
-            <table className="w-full border-collapse text-sm border border-gray-200 min-w-max">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700 whitespace-nowrap">Poste</th>
-                  <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700 whitespace-nowrap">Zone</th>
-                  <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700 whitespace-nowrap">Site</th>
-                  <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700 whitespace-nowrap">Produit</th>
-                  <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700 whitespace-nowrap">Famille</th>
-                  <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700 whitespace-nowrap">Composants</th>
-                  <th className="border border-gray-300 px-3 py-2 text-right font-medium text-gray-700 whitespace-nowrap">Prélèvement</th>
-                  <th className="border border-gray-300 px-3 py-2 text-right font-medium text-gray-700 whitespace-nowrap">Préparation</th>
-                  <th className="border border-gray-300 px-3 py-2 text-right font-medium text-gray-700 whitespace-nowrap">Analyse</th>
-                  <th className="border border-gray-300 px-3 py-2 text-right font-medium text-gray-700 whitespace-nowrap">Total Produit</th>
-                </tr>
-              </thead>
-              <tbody>
-                {coutDetails.detail.detail_postes.map((detailPoste, posteIndex) => (
-                  detailPoste.produits && detailPoste.produits.map((produit, produitIndex) => (
-                    produit.familles && produit.familles.map((famille, familleIndex) => (
-                      <tr 
-                        key={`${posteIndex}-${produitIndex}-${familleIndex}`} 
-                        className={familleIndex % 2 === 0 ? 'hover:bg-gray-50' : 'hover:bg-gray-50 bg-gray-50'}
-                      >
-                        {familleIndex === 0 && produitIndex === 0 && (
-                          <>
-                            <td 
-                              className="border border-gray-300 px-3 py-2 font-medium align-top" 
-                              rowSpan={detailPoste.produits.reduce((acc, prod) => acc + (prod.familles ? prod.familles.length : 0), 0)}
-                            >
-                              <div className="font-semibold text-gray-900">{detailPoste.poste}</div>
-                            </td>
-                            <td 
-                              className="border border-gray-300 px-3 py-2 align-top" 
-                              rowSpan={detailPoste.produits.reduce((acc, prod) => acc + (prod.familles ? prod.familles.length : 0), 0)}
-                            >
-                              <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
-                                {detailPoste.zone_activite || 'Non spécifiée'}
-                              </span>
-                            </td>
-                            <td 
-                              className="border border-gray-300 px-3 py-2 align-top" 
-                              rowSpan={detailPoste.produits.reduce((acc, prod) => acc + (prod.familles ? prod.familles.length : 0), 0)}
-                            >
-                              <div className="text-sm">
-                                <div className="font-medium text-gray-900">{detailPoste.site}</div>
-                                <div className="text-gray-500 text-xs">{detailPoste.ville}</div>
-                              </div>
-                            </td>
-                          </>
-                        )}
-                        {familleIndex === 0 && (
-                          <td 
-                            className="border border-gray-300 px-3 py-2 align-top" 
-                            rowSpan={produit.familles ? produit.familles.length : 1}
-                          >
-                            <div>
-                              <div className="font-medium text-gray-900">{produit.produit}</div>
-                              {produit.description && (
-                                <div className="text-gray-500 text-xs mt-1">{produit.description}</div>
-                              )}
-                            </div>
-                          </td>
-                        )}
-                        <td className="border border-gray-300 px-3 py-2">
-                          <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800 border border-green-200">
-                            {famille.famille}
-                          </span>
-                        </td>
-                        <td className="border border-gray-300 px-3 py-2">
-                          {famille.composants && famille.composants.length > 0 ? (
-                            <div className="space-y-1">
-                              {famille.composants.map((composant, compIndex) => (
-                                <div key={compIndex} className="text-xs">
-                                  <div className="font-medium text-gray-700">{composant.nom}</div>
-                                  {composant.cas_number && (
-                                    <div className="text-gray-500">CAS: {composant.cas_number}</div>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <span className="text-gray-400 text-xs">-</span>
+{/* Détail par Poste avec Produits */}
+<div className="overflow-x-auto">
+  <h3 className="text-md font-semibold text-gray-900 mb-3 flex items-center">
+    <FaList className="w-4 h-4 mr-2 text-gray-500" />
+    Détail par Poste et Produit ({coutDetails.detail.detail_postes?.length || 0} poste(s))
+  </h3>
+  
+  {coutDetails.detail.detail_postes && coutDetails.detail.detail_postes.length > 0 ? (
+    <table className="w-full border-collapse text-sm border border-gray-200 min-w-max">
+      <thead>
+        <tr className="bg-gray-100">
+          <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700 whitespace-nowrap">Site</th>
+          <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700 whitespace-nowrap">Zone</th>
+          <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700 whitespace-nowrap">Poste</th>
+          <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700 whitespace-nowrap">Produit</th>
+          <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700 whitespace-nowrap">Famille</th>
+          <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700 whitespace-nowrap">Composants</th>
+          <th className="border border-gray-300 px-3 py-2 text-right font-medium text-gray-700 whitespace-nowrap">Prélèvement</th>
+          <th className="border border-gray-300 px-3 py-2 text-right font-medium text-gray-700 whitespace-nowrap">Préparation</th>
+          <th className="border border-gray-300 px-3 py-2 text-right font-medium text-gray-700 whitespace-nowrap">Analyse</th>
+          <th className="border border-gray-300 px-3 py-2 text-right font-medium text-gray-700 whitespace-nowrap">Total Produit</th>
+        </tr>
+      </thead>
+      <tbody>
+        {coutDetails.detail.detail_postes.map((detailPoste, posteIndex) => (
+          detailPoste.produits && detailPoste.produits.map((produit, produitIndex) => (
+            produit.familles && produit.familles.map((famille, familleIndex) => (
+              <tr 
+                key={`${posteIndex}-${produitIndex}-${familleIndex}`} 
+                className={familleIndex % 2 === 0 ? 'hover:bg-gray-50' : 'hover:bg-gray-50 bg-gray-50'}
+              >
+                {familleIndex === 0 && produitIndex === 0 && (
+                  <>
+                    <td 
+                      className="border border-gray-300 px-3 py-2 align-top" 
+                      rowSpan={detailPoste.produits.reduce((acc, prod) => acc + (prod.familles ? prod.familles.length : 0), 0)}
+                    >
+                      <div className="text-sm">
+                        <div className="font-medium text-gray-900">{detailPoste.site || 'Non spécifié'}</div>
+                      </div>
+                    </td>
+                    <td 
+                      className="border border-gray-300 px-3 py-2 align-top" 
+                      rowSpan={detailPoste.produits.reduce((acc, prod) => acc + (prod.familles ? prod.familles.length : 0), 0)}
+                    >
+                      <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
+                        {detailPoste.zone_activite || 'Non spécifiée'}
+                      </span>
+                    </td>
+                    <td 
+                      className="border border-gray-300 px-3 py-2 font-medium align-top" 
+                      rowSpan={detailPoste.produits.reduce((acc, prod) => acc + (prod.familles ? prod.familles.length : 0), 0)}
+                    >
+                      <div className="font-semibold text-gray-900">{detailPoste.poste}</div>
+                    </td>
+                  </>
+                )}
+                {familleIndex === 0 && (
+                  <td 
+                    className="border border-gray-300 px-3 py-2 align-top" 
+                    rowSpan={produit.familles ? produit.familles.length : 1}
+                  >
+                    <div>
+                      <div className="font-medium text-gray-900">{produit.produit}</div>
+                    </div>
+                  </td>
+                )}
+                <td className="border border-gray-300 px-3 py-2">
+                  <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800 border border-green-200">
+                    {famille.famille}
+                  </span>
+                </td>
+                <td className="border border-gray-300 px-3 py-2">
+                  {famille.composants && famille.composants.length > 0 ? (
+                    <div className="space-y-1">
+                      {famille.composants.map((composant, compIndex) => (
+                        <div key={compIndex} className="text-xs">
+                          <div className="font-medium text-gray-700">{composant.nom}</div>
+                          {composant.cas_number && (
+                            <div className="text-gray-500">CAS: {composant.cas_number}</div>
                           )}
-                        </td>
-                        <td className="border border-gray-300 px-3 py-2 text-right font-semibold text-gray-900">
-                          {formatCurrency(famille.C1 || 0)}
-                        </td>
-                        <td className="border border-gray-300 px-3 py-2 text-right font-semibold text-gray-900">
-                          {formatCurrency(famille.C2 || 0)}
-                        </td>
-                        <td className="border border-gray-300 px-3 py-2 text-right font-semibold text-gray-900">
-                          {formatCurrency(famille.C3 || 0)}
-                        </td>
-                        {familleIndex === 0 && (
-                          <td 
-                            className="border border-gray-300 px-3 py-2 text-right font-bold text-[#26658C] bg-blue-50 align-top" 
-                            rowSpan={produit.familles ? produit.familles.length : 1}
-                          >
-                            {formatCurrency(produit.total_produit || 0)}
-                          </td>
-                        )}
-                      </tr>
-                    ))
-                  ))
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <div className="text-center py-8 text-gray-500 border border-gray-200 rounded-sm">
-              <FaList className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-              <p>Aucun détail de poste disponible</p>
-            </div>
-          )}
-        </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-gray-400 text-xs">-</span>
+                  )}
+                </td>
+                <td className="border border-gray-300 px-3 py-2 text-right font-semibold text-gray-900">
+                  {formatCurrency(famille.C1 || 0)}
+                </td>
+                <td className="border border-gray-300 px-3 py-2 text-right font-semibold text-gray-900">
+                  {formatCurrency(famille.C2 || 0)}
+                </td>
+                <td className="border border-gray-300 px-3 py-2 text-right font-semibold text-gray-900">
+                  {formatCurrency(famille.C3 || 0)}
+                </td>
+                {familleIndex === 0 && (
+                  <td 
+                    className="border border-gray-300 px-3 py-2 text-right font-bold text-[#26658C] bg-blue-50 align-top" 
+                    rowSpan={produit.familles ? produit.familles.length : 1}
+                  >
+                    {formatCurrency(produit.total_produit || 0)}
+                  </td>
+                )}
+              </tr>
+            ))
+          ))
+        ))}
+      </tbody>
+    </table>
+  ) : (
+    <div className="text-center py-8 text-gray-500 border border-gray-200 rounded-sm">
+      <FaList className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+      <p>Aucun détail de poste disponible</p>
+    </div>
+  )}
+</div>
         {/* Section Coûts Fixes */}
         <div className="overflow-x-auto">
           <h3 className="text-md font-semibold text-gray-900 mb-3 flex items-center">

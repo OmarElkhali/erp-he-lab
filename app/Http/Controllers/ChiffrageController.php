@@ -125,7 +125,7 @@ public function calculerCoutTotal(Demande $demande)
             $detailPostes[] = [
                 'poste' => $poste->nom_poste,
                 'zone_activite' => $poste->zone_activite,
-                'site' => $site->nom_site,
+                'site' => $site->code_site,
                 'ville' => $site->ville->nom ?? 'Ville inconnue',
                 'total_poste' => $coutPoste,
                 'produits' => $detailProduitsPoste,
@@ -177,13 +177,13 @@ public function calculerCoutTotal(Demande $demande)
             // Calcul du total des postes pour ce site
             $totalPostesSite = 0;
             foreach ($detailPostes as $detailPoste) {
-                if ($detailPoste['site'] === $site->nom_site) {
+                if ($detailPoste['site'] === $site->code_site) {
                     $totalPostesSite += $detailPoste['total_poste'];
                 }
             }
             
             $detailSites[] = [
-                'site' => $site->nom_site,
+                'site' => $site->code_site,
                 'ville' => $site->ville->nom ?? 'Ville inconnue',
                 'C4_rapport' => $C4,
                 'C5_logistique' => $C5,
@@ -205,7 +205,7 @@ public function calculerCoutTotal(Demande $demande)
                     $villesUniquesAvecFrais[] = [
                         'ville' => $site->ville->nom ?? 'Ville inconnue',
                         'frais_deplacement' => $site->ville->frais_deplacement ?? 0,
-                        'sites' => $demande->sites->where('ville_id', $villeId)->pluck('nom_site')->toArray()
+                         'sites' => $demande->sites->where('ville_id', $villeId)->pluck('code_site')->toArray()
                     ];
                     $villesTraitees[] = $villeId;
                 }
