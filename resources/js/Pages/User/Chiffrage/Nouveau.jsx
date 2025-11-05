@@ -384,27 +384,18 @@ const handleSaveDraft = async () => {
             current_step: currentStep,
             nom_sauvegarde: `Brouillon ${new Date().toLocaleDateString('fr-FR')}`
         });
-
-        // Supprimer aussi le brouillon localStorage
         localStorage.removeItem('demande_draft');
-        
-        // Afficher un message de succès avec redirection automatique
         await Swal.fire({
             icon: 'success',
             title: 'Brouillon sauvegardé!',
-            text: 'Redirection vers la page des sauvegardes...',
             confirmButtonColor: '#26658C',
             timer: 1500,
             showConfirmButton: false
         });
-        
-        // Redirection Inertia vers la page des sauvegardes
         router.visit('/sauvegardes');
         
     } catch (error) {
         console.error('Erreur sauvegarde:', error);
-        
-        // Fallback: sauvegarde localStorage
         const draftData = {
             ...data,
             statut: 'brouillon',
