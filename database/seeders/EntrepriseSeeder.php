@@ -14,9 +14,8 @@ class EntrepriseSeeder extends Seeder
             [
                 'ice' => '001234567890123',
                 'nom' => 'OCP SA',
-                'adresse' => 'Angle Route d’El Jadida et BD de la Grande Ceinture, Casablanca',
-                'contact_nom' => 'ALAOUI',
-                'contact_prenom' => 'Mohamed',
+                'adresse' => 'Angle Route d\'El Jadida et BD de la Grande Ceinture, Casablanca',
+                'nom_prenom' => 'ALAOUI Mohamed', // ✅ FUSIONNÉ
                 'contact_fonction' => 'Responsable HSE',
                 'telephone' => '0522443344',
                 'email' => 'hse@ocp.ma',
@@ -25,8 +24,7 @@ class EntrepriseSeeder extends Seeder
                 'ice' => '001122334455667',
                 'nom' => 'Maroc Telecom',
                 'adresse' => 'Avenue Annakhil, Hay Riad, Rabat',
-                'contact_nom' => 'BENNANI',
-                'contact_prenom' => 'Fatima',
+                'nom_prenom' => 'BENNANI Fatima', // ✅ FUSIONNÉ
                 'contact_fonction' => 'Chef de Service Environnement',
                 'telephone' => '0537778899',
                 'email' => 'environnement@iam.ma',
@@ -35,8 +33,7 @@ class EntrepriseSeeder extends Seeder
                 'ice' => '002233445566778',
                 'nom' => 'LafargeHolcim Maroc',
                 'adresse' => 'Tour Atlas, Angle routes des Zaers et Moulay Youssef, Rabat',
-                'contact_nom' => 'IDRISSI',
-                'contact_prenom' => 'Karim',
+                'nom_prenom' => 'IDRISSI Karim', // ✅ FUSIONNÉ
                 'contact_fonction' => 'Ingénieur QHSE',
                 'telephone' => '0537665544',
                 'email' => 'qhse@lafargeholcim.ma',
@@ -45,8 +42,7 @@ class EntrepriseSeeder extends Seeder
                 'ice' => '003344556677889',
                 'nom' => 'ONEE',
                 'adresse' => '65, Rue Othman Ben Affan, Rabat',
-                'contact_nom' => 'CHRAIBI',
-                'contact_prenom' => 'Hassan',
+                'nom_prenom' => 'CHRAIBI Hassan', // ✅ FUSIONNÉ
                 'contact_fonction' => 'Responsable Qualité',
                 'telephone' => '0537889900',
                 'email' => 'qualite@onee.ma',
@@ -55,8 +51,7 @@ class EntrepriseSeeder extends Seeder
                 'ice' => '004455667788990',
                 'nom' => 'Sonasid',
                 'adresse' => 'Zone Industrielle, Nador',
-                'contact_nom' => 'EL FASSI',
-                'contact_prenom' => 'Amina',
+                'nom_prenom' => 'EL FASSI Amina', // ✅ FUSIONNÉ
                 'contact_fonction' => 'Chef de Laboratoire',
                 'telephone' => '0536554433',
                 'email' => 'laboratoire@sonasid.ma',
@@ -65,8 +60,7 @@ class EntrepriseSeeder extends Seeder
                 'ice' => '005566778899001',
                 'nom' => 'Cosumar',
                 'adresse' => '165, Boulevard d\'Anfa, Casablanca',
-                'contact_nom' => 'TAZI',
-                'contact_prenom' => 'Rachid',
+                'nom_prenom' => 'TAZI Rachid', // ✅ FUSIONNÉ
                 'contact_fonction' => 'Responsable Environnement',
                 'telephone' => '0522998877',
                 'email' => 'environnement@cosumar.co.ma',
@@ -75,8 +69,7 @@ class EntrepriseSeeder extends Seeder
                 'ice' => '006677889900112',
                 'nom' => 'Managem',
                 'adresse' => 'Angle Rue Abderrahmane El Ghafiki et Rue Annakhil, Hay Riad, Rabat',
-                'contact_nom' => 'BELKHAYAT',
-                'contact_prenom' => 'Samira',
+                'nom_prenom' => 'BELKHAYAT Samira', // ✅ FUSIONNÉ
                 'contact_fonction' => 'Ingénieur Process',
                 'telephone' => '0537445566',
                 'email' => 'process@managemgroup.com',
@@ -85,8 +78,7 @@ class EntrepriseSeeder extends Seeder
                 'ice' => '007788990011223',
                 'nom' => 'Sothema',
                 'adresse' => 'Lot. 22, ZI Sidi Bernoussi, Casablanca',
-                'contact_nom' => 'MOUNA',
-                'contact_prenom' => 'Leila',
+                'nom_prenom' => 'MOUNA Leila', // ✅ FUSIONNÉ
                 'contact_fonction' => 'Responsable Contrôle Qualité',
                 'telephone' => '0522334455',
                 'email' => 'qualite@sothema.ma',
@@ -95,8 +87,7 @@ class EntrepriseSeeder extends Seeder
                 'ice' => '008899001122334',
                 'nom' => 'Label\'Vie',
                 'adresse' => '143, Route des Ouled Ziane, Casablanca',
-                'contact_nom' => 'BERADA',
-                'contact_prenom' => 'Youssef',
+                'nom_prenom' => 'BERADA Youssef', // ✅ FUSIONNÉ
                 'contact_fonction' => 'Responsable Hygiène',
                 'telephone' => '0522778899',
                 'email' => 'hygiene@labelvie.ma',
@@ -105,8 +96,7 @@ class EntrepriseSeeder extends Seeder
                 'ice' => '009900112233445',
                 'nom' => 'S2M',
                 'adresse' => 'Parc d\'Activités Economiques, Tanger',
-                'contact_nom' => 'AMRANI',
-                'contact_prenom' => 'Khalid',
+                'nom_prenom' => 'AMRANI Khalid', // ✅ FUSIONNÉ
                 'contact_fonction' => 'Chef de Projet',
                 'telephone' => '0539887766',
                 'email' => 'projets@s2m.ma',
@@ -115,8 +105,7 @@ class EntrepriseSeeder extends Seeder
                 'ice' => '010011223344556',
                 'nom' => 'Yazaki Morocco',
                 'adresse' => 'Zone Industrielle, Kénitra',
-                'contact_nom' => 'LAMRANI',
-                'contact_prenom' => 'Said',
+                'nom_prenom' => 'LAMRANI Said', // ✅ FUSIONNÉ
                 'contact_fonction' => 'Responsable Production',
                 'telephone' => '0537554433',
                 'email' => 'production@yazaki.ma',
@@ -125,8 +114,7 @@ class EntrepriseSeeder extends Seeder
                 'ice' => '011122334455667',
                 'nom' => 'Delphi Packard',
                 'adresse' => 'Ain Sebaâ, Casablanca',
-                'contact_nom' => 'HAFIDI',
-                'contact_prenom' => 'Nadia',
+                'nom_prenom' => 'HAFIDI Nadia', // ✅ FUSIONNÉ
                 'contact_fonction' => 'Ingénieur HSE',
                 'telephone' => '0522667788',
                 'email' => 'hse@delphi.com',
@@ -135,8 +123,7 @@ class EntrepriseSeeder extends Seeder
                 'ice' => '012233445566778',
                 'nom' => 'SNEP',
                 'adresse' => 'Rue Patrice Lumumba, Rabat',
-                'contact_nom' => 'JAIDI',
-                'contact_prenom' => 'Abdelaziz',
+                'nom_prenom' => 'JAIDI Abdelaziz', // ✅ FUSIONNÉ
                 'contact_fonction' => 'Directeur Technique',
                 'telephone' => '0537998877',
                 'email' => 'technique@snep.ma',
@@ -145,8 +132,7 @@ class EntrepriseSeeder extends Seeder
                 'ice' => '013344556677889',
                 'nom' => 'Ciments du Maroc',
                 'adresse' => '174, Avenue Hassan II, Casablanca',
-                'contact_nom' => 'BENJELLOUN',
-                'contact_prenom' => 'Omar',
+                'nom_prenom' => 'BENJELLOUN Omar', // ✅ FUSIONNÉ
                 'contact_fonction' => 'Responsable Laboratoire',
                 'telephone' => '0522889977',
                 'email' => 'labo@cimar.ma',
@@ -155,8 +141,7 @@ class EntrepriseSeeder extends Seeder
                 'ice' => '014455667788990',
                 'nom' => 'Sahara Wind',
                 'adresse' => '45, Avenue Hassan II, Casablanca',
-                'contact_nom' => 'ESSAKALLI',
-                'contact_prenom' => 'Hicham',
+                'nom_prenom' => 'ESSAKALLI Hicham', // ✅ FUSIONNÉ
                 'contact_fonction' => 'Coordinateur Projet',
                 'telephone' => '0522776655',
                 'email' => 'projet@saharawind.com',

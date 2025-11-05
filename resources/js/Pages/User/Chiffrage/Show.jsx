@@ -520,7 +520,7 @@ const SitesTab = () => {
                         {produit.personnes_exposees}
                       </td>
                       <td className="border border-gray-300 px-3 py-2 text-center text-gray-700">
-                        {produit.duree_shift}h
+                        {produit.duree_shift}
                       </td>
                       <td className="border border-gray-300 px-3 py-2 text-center text-gray-700">
                         {produit.duree_exposition_quotidienne}
@@ -597,17 +597,16 @@ const SitesTab = () => {
             <tr className="bg-gray-100">
               <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Informations Entreprise</th>
               <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Sites d'Intervention</th>
-              <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Contact Demande</th>
             </tr>
           </thead>
           <tbody>
             <tr>
               <td className="border border-gray-300 px-4 py-3 align-top">
                 <div className="space-y-2 text-sm">
-                  <div><span className="font-medium text-gray-900">Nom:</span> <span className="text-gray-700">{demande.entreprise.nom}</span></div>
+                  <div><span className="font-medium text-gray-900">Nom entreprise:</span> <span className="text-gray-700">{demande.entreprise.nom}</span></div>
                   <div><span className="font-medium text-gray-900">ICE:</span> <span className="text-gray-700">{demande.entreprise.ice}</span></div>
                   <div><span className="font-medium text-gray-900">Adresse:</span> <span className="text-gray-700">{demande.entreprise.adresse}</span></div>
-                  <div><span className="font-medium text-gray-900">Contact:</span> <span className="text-gray-700">{demande.entreprise.contact_nom} {demande.entreprise.contact_prenom}</span></div>
+                  <div><span className="font-medium text-gray-900">Nom et Prénom:</span> <span className="text-gray-700">{demande.entreprise.nom_prenom}</span></div>
                   <div><span className="font-medium text-gray-900">Fonction:</span> <span className="text-gray-700">{demande.entreprise.contact_fonction}</span></div>
                   <div><span className="font-medium text-gray-900">Tél:</span> <span className="text-gray-700">{demande.entreprise.telephone}</span></div>
                   <div><span className="font-medium text-gray-900">Email:</span> <span className="text-gray-700">{demande.entreprise.email}</span></div>
@@ -642,14 +641,6 @@ const SitesTab = () => {
                 ) : (
                   <div className="text-gray-500 italic text-sm">Aucun site défini</div>
                 )}
-              </td>
-              
-              <td className="border border-gray-300 px-4 py-3 align-top">
-                <div className="space-y-2 text-sm">
-                  <div><span className="font-medium text-gray-900">Nom:</span> <span className="text-gray-700">{demande.contact_nom_demande}</span></div>
-                  <div><span className="font-medium text-gray-900">Email:</span> <span className="text-gray-700">{demande.contact_email_demande}</span></div>
-                  <div><span className="font-medium text-gray-900">Téléphone:</span> <span className="text-gray-700">{demande.contact_tel_demande}</span></div>
-                </div>
               </td>
             </tr>
           </tbody>

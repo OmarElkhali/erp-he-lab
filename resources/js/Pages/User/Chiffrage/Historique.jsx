@@ -211,9 +211,6 @@ export default function Historique({ auth, demandes, matrice }) {
                     Sites
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Date Création
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Contact
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -259,18 +256,11 @@ export default function Historique({ auth, demandes, matrice }) {
                         </div>
                       )}
                     </td>
-                    
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {new Date(demande.date_creation).toLocaleDateString('fr-FR')}
-                    </td>
-                    
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">{demande.contact_nom_demande}</div>
                       <div className="text-sm text-gray-500">{demande.contact_email_demande}</div>
                       <div className="text-sm text-gray-500">{demande.contact_tel_demande}</div>
                     </td>
-                    
-                    {/* NOUVELLE COLONNE POSTES (calculée depuis tous les sites) */}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
                         {getTotalPostes(demande)} poste(s)

@@ -50,8 +50,7 @@ public function store(Request $request)
             [
                 'nom' => $request->nom,
                 'adresse' => $request->adresse,
-                'contact_nom' => $request->contact_nom,
-                'contact_prenom' => $request->contact_prenom,
+                'nom_prenom' => $request->nom_prenom,
                 'contact_fonction' => $request->contact_fonction,
                 'telephone' => $request->telephone,
                 'email' => $request->email,
@@ -65,7 +64,7 @@ public function store(Request $request)
             'matrice_id' => $request->matrice_id,
             'date_creation' => now(),
             'statut' => 'en_attente',
-            'contact_nom_demande' => $request->contact_nom_demande ?? $request->contact_nom,
+            'contact_nom_demande' => $request->nom_prenom,
             'contact_email_demande' => $request->contact_email_demande ?? $request->email,
             'contact_tel_demande' => $request->contact_tel_demande ?? $request->telephone,
         ]);
@@ -236,18 +235,25 @@ public function update(Request $request, Demande $demande)
             [
                 'nom' => $request->nom,
                 'adresse' => $request->adresse,
-                'contact_nom' => $request->contact_nom,
-                'contact_prenom' => $request->contact_prenom,
+                'nom_prenom'=> $request->nom_prenom,
                 'contact_fonction' => $request->contact_fonction,
                 'telephone' => $request->telephone,
                 'email' => $request->email,
             ]
         );
 
-        // 2. Supprimer les anciennes données
+        // 2. 🔥 CORRECTION : Mettre à jour les contacts de la demande avec les nouvelles données de l'entreprise
+        $demande->update([
+            'entreprise_id' => $entreprise->id,
+            'matrice_id' => $request->matrice_id,
+            'contact_nom_demande' => $request->nom_prenom, // Utiliser le nom_prenom mis à jour
+            'contact_email_demande' => $request->email,    // Utiliser l'email mis à jour
+            'contact_tel_demande' => $request->telephone,  // Utiliser le téléphone mis à jour
+        ]);
+
+        // 3. Supprimer les anciennes données (sites, postes, produits)
         foreach ($demande->sites as $site) {
             foreach ($site->postes as $poste) {
-                // Supprimer les produits et leurs relations
                 foreach ($poste->produits as $produit) {
                     $produit->composants()->detach();
                     $produit->delete();
@@ -257,7 +263,7 @@ public function update(Request $request, Demande $demande)
         }
         $demande->sites()->delete();
 
-        // 3. Recréer les sites avec leurs postes et produits
+        // 4. Recréer les sites avec leurs postes et produits
         foreach ($request->sites as $siteData) {
             $site = Site::create([
                 'entreprise_id' => $entreprise->id,
@@ -298,15 +304,6 @@ public function update(Request $request, Demande $demande)
                 }
             }
         }
-
-        // 4. Mettre à jour la demande
-        $demande->update([
-            'entreprise_id' => $entreprise->id,
-            'matrice_id' => $request->matrice_id,
-            'contact_nom_demande' => $request->contact_nom_demande ?? $request->contact_nom,
-            'contact_email_demande' => $request->contact_email_demande ?? $request->email,
-            'contact_tel_demande' => $request->contact_tel_demande ?? $request->telephone,
-        ]);
 
         DB::commit();
 

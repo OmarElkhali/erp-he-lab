@@ -10,7 +10,7 @@ class Entreprise extends Model
     use HasFactory;
 
     protected $fillable = [
-        'ice', 'nom', 'adresse', 'contact_nom', 'contact_prenom', 
+        'ice', 'nom', 'adresse', 'nom_prenom',
         'contact_fonction', 'telephone', 'email'
     ];
 
