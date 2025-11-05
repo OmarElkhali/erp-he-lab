@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import axios from "axios";
 import ProduitComposants from './ProduitComposants';
 import Swal from 'sweetalert2';
-import { FaCheck, FaArrowRight, FaArrowLeft, FaPlus, FaPaperPlane } from 'react-icons/fa';
+import { FaCheck, FaArrowRight, FaArrowLeft, FaPlus, FaPaperPlane, FaSave } from 'react-icons/fa';
 
 function PosteComposants({ poste, index, siteIndex, toggleComposant, updatePoste }) {
     const [composants, setComposants] = useState([]);
@@ -338,29 +338,145 @@ export default function Nouveau({ auth, matrice_id, matrice }) {
     }, [sites]);
 
     const handleIceChange = async (e) => {
-    const value = e.target.value;
-    setData("ice", value);
+        const value = e.target.value;
+        setData("ice", value);
 
-    if (value.length >= 3) {
-        try {
-            const response = await axios.get(`/entreprises/find/${value}`);
-            const entreprise = response.data;
-            setData({
-                ...data,
-                ice: entreprise.ice,
-                nom: entreprise.nom,
-                adresse: entreprise.adresse,
-                nom_prenom: entreprise.nom_prenom || "", 
-                contact_fonction: entreprise.contact_fonction || "",
-                telephone: entreprise.telephone,
-                email: entreprise.email,
-            });
-        } catch (error) {
-            console.log("Entreprise non trouvée");
+        if (value.length >= 3) {
+            try {
+                const response = await axios.get(`/entreprises/find/${value}`);
+                const entreprise = response.data;
+                setData({
+                    ...data,
+                    ice: entreprise.ice,
+                    nom: entreprise.nom,
+                    adresse: entreprise.adresse,
+                    nom_prenom: entreprise.nom_prenom || "", 
+                    contact_fonction: entreprise.contact_fonction || "",
+                    telephone: entreprise.telephone,
+                    email: entreprise.email,
+                });
+            } catch (error) {
+                console.log("Entreprise non trouvée");
+            }
         }
+    };
+
+   // Dans votre composant Nouveau.jsx, modifiez la fonction handleSaveDraft :
+
+
+
+const handleSaveDraft = async () => {
+    // Validation basique pour la sauvegarde
+    if (!data.ice || !data.nom) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Informations manquantes',
+            text: 'Veuillez remplir au moins les informations de base de l\'entreprise pour sauvegarder',
+            confirmButtonColor: '#26658C'
+        });
+        return;
+    }
+
+    try {
+        const response = await axios.post('/sauvegardes', {
+            matrice_id: data.matrice_id,
+            data: data,
+            current_step: currentStep,
+            nom_sauvegarde: `Brouillon ${new Date().toLocaleDateString('fr-FR')}`
+        });
+
+        // Supprimer aussi le brouillon localStorage
+        localStorage.removeItem('demande_draft');
+        
+        // Afficher un message de succès avec redirection automatique
+        await Swal.fire({
+            icon: 'success',
+            title: 'Brouillon sauvegardé!',
+            text: 'Redirection vers la page des sauvegardes...',
+            confirmButtonColor: '#26658C',
+            timer: 1500,
+            showConfirmButton: false
+        });
+        
+        // Redirection Inertia vers la page des sauvegardes
+        router.visit('/sauvegardes');
+        
+    } catch (error) {
+        console.error('Erreur sauvegarde:', error);
+        
+        // Fallback: sauvegarde localStorage
+        const draftData = {
+            ...data,
+            statut: 'brouillon',
+            saved_at: new Date().toISOString(),
+            current_step: currentStep
+        };
+
+        localStorage.setItem('demande_draft', JSON.stringify(draftData));
+        
+        Swal.fire({
+            icon: 'success',
+            title: 'Brouillon sauvegardé localement!',
+            text: 'Votre demande a été sauvegardée localement. Vous pouvez continuer plus tard.',
+            confirmButtonColor: '#26658C',
+            timer: 2000
+        });
     }
 };
 
+// Ajouter cette fonction pour charger une sauvegarde existante
+useEffect(() => {
+    const loadDraft = async () => {
+        // Vérifier si on a une sauvegarde serveur pour cette matrice
+        if (matrice_id) {
+            try {
+                const response = await axios.get(`/api/sauvegardes/matrice/${matrice_id}`);
+                if (response.data) {
+                    const savedData = response.data;
+                    setData(prevData => ({ ...prevData, ...savedData.data }));
+                    setSites(savedData.data.sites || []);
+                    setCurrentStep(savedData.current_step || 1);
+                    
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Brouillon chargé',
+                        text: 'Votre brouillon précédent a été chargé automatiquement.',
+                        confirmButtonColor: '#26658C',
+                        timer: 2000
+                    });
+                    return;
+                }
+            } catch (error) {
+                console.log('Aucune sauvegarde serveur trouvée');
+            }
+        }
+
+        // Fallback: vérifier le localStorage
+        const savedDraft = localStorage.getItem('demande_draft');
+        if (savedDraft) {
+            const draftData = JSON.parse(savedDraft);
+            if (draftData.matrice_id === matrice_id) {
+                setData(prevData => ({ ...prevData, ...draftData }));
+                setSites(draftData.sites || []);
+                setCurrentStep(draftData.current_step || 1);
+                
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Brouillon chargé',
+                    text: 'Votre brouillon local a été chargé automatiquement.',
+                    confirmButtonColor: '#26658C',
+                    timer: 2000
+                });
+            }
+        }
+    };
+
+    if (matrice_id) {
+        loadDraft();
+    }
+}, [matrice_id]);
+
+    // Fonction pour soumettre définitivement
     const handleSubmit = (e) => {
         e.preventDefault();
         
@@ -394,6 +510,9 @@ export default function Nouveau({ auth, matrice_id, matrice }) {
         
         post(route('demandes.store'), {
             onSuccess: () => {
+                // Supprimer le brouillon sauvegardé
+                localStorage.removeItem('demande_draft');
+                
                 Swal.fire({
                     icon: 'success',
                     title: 'Succès!',
@@ -606,7 +725,15 @@ export default function Nouveau({ auth, matrice_id, matrice }) {
                                         </div>
                                     </div>
                                     
-                                    <div className="flex justify-end pt-2">
+                                    <div className="flex justify-between pt-2">
+                                        <button
+                                            type="button"
+                                            onClick={handleSaveDraft}
+                                            className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 focus:outline-none focus:ring-1 focus:ring-gray-500 transition duration-200 flex items-center space-x-2 font-medium text-sm"
+                                        >
+                                            <FaSave className="w-3 h-3" />
+                                            <span>Sauvegarder</span>
+                                        </button>
                                         <button
                                             type="button"
                                             onClick={nextStep}
@@ -721,14 +848,24 @@ export default function Nouveau({ auth, matrice_id, matrice }) {
                                             <FaArrowLeft className="w-3 h-3" />
                                             <span>Précédent</span>
                                         </button>
-                                        <button
-                                            type="button"
-                                            onClick={nextStep}
-                                            className="px-4 py-2 bg-[#26658C] text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-1 focus:ring-[#26658C] transition duration-200 flex items-center space-x-2 font-medium text-sm"
-                                        >
-                                            <span>Suivant</span>
-                                            <FaArrowRight className="w-3 h-3" />
-                                        </button>
+                                        <div className="flex space-x-2">
+                                            <button
+                                                type="button"
+                                                onClick={handleSaveDraft}
+                                                className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 focus:outline-none focus:ring-1 focus:ring-gray-500 transition duration-200 flex items-center space-x-2 font-medium text-sm"
+                                            >
+                                                <FaSave className="w-3 h-3" />
+                                                <span>Sauvegarder</span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={nextStep}
+                                                className="px-4 py-2 bg-[#26658C] text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-1 focus:ring-[#26658C] transition duration-200 flex items-center space-x-2 font-medium text-sm"
+                                            >
+                                                <span>Suivant</span>
+                                                <FaArrowRight className="w-3 h-3" />
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             )}
@@ -952,23 +1089,33 @@ export default function Nouveau({ auth, matrice_id, matrice }) {
                                             <FaArrowLeft className="w-3 h-3" />
                                             <span>Précédent</span>
                                         </button>
-                                        <button
-                                            type="submit"
-                                            disabled={processing}
-                                            className="px-4 py-2 bg-[#26658C] text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-1 focus:ring-[#26658C] transition duration-200 flex items-center space-x-2 font-medium text-sm shadow"
-                                        >
-                                            {processing ? (
-                                                <>
-                                                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
-                                                    <span>Soumission...</span>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <FaPaperPlane className="w-3 h-3" />
-                                                    <span>Soumettre</span>
-                                                </>
-                                            )}
-                                        </button>
+                                        <div className="flex space-x-2">
+                                            <button
+                                                type="button"
+                                                onClick={handleSaveDraft}
+                                                className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 focus:outline-none focus:ring-1 focus:ring-gray-500 transition duration-200 flex items-center space-x-2 font-medium text-sm"
+                                            >
+                                                <FaSave className="w-3 h-3" />
+                                                <span>Sauvegarder</span>
+                                            </button>
+                                            <button
+                                                type="submit"
+                                                disabled={processing}
+                                                className="px-4 py-2 bg-[#26658C] text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-1 focus:ring-[#26658C] transition duration-200 flex items-center space-x-2 font-medium text-sm shadow"
+                                            >
+                                                {processing ? (
+                                                    <>
+                                                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                                                        <span>Soumission...</span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <FaPaperPlane className="w-3 h-3" />
+                                                        <span>Soumettre</span>
+                                                    </>
+                                                )}
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             )}

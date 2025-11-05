@@ -17,7 +17,8 @@ import {
   FaChevronDown,
   FaBars,
   FaBell,
-  FaHistory
+  FaHistory,
+  FaSave
 } from 'react-icons/fa';
 
 export default function AuthenticatedLayout({ user, header, children, noWrapper = false }) {
@@ -31,36 +32,36 @@ export default function AuthenticatedLayout({ user, header, children, noWrapper 
 
   const getUserInitial = () => user?.nom?.charAt(0)?.toUpperCase() || 'U';
   const getFullName = () => `${user?.nom || ''} ${user?.prenom || ''}`.trim() || 'Utilisateur';
-  useEffect(() => {
-        if (user) {
-          fetchUnreadCount();
-          
-          // Polling toutes les 30 secondes pour les nouvelles notifications
-          const interval = setInterval(fetchUnreadCount, 30000);
-          return () => clearInterval(interval);
-        }
-      }, [user]);
 
+  useEffect(() => {
+    if (user) {
+      fetchUnreadCount();
       
-        const fetchUnreadCount = async () => {
-          try {
-            const response = await axios.get('/notifications/unread-count');
-            setUnreadCount(response.data.count);
-          } catch (error) {
-            console.error('Erreur chargement notifications:', error);
-          }
-        };
+      // Polling toutes les 30 secondes seulement pour les notifications
+      const interval = setInterval(() => {
+        fetchUnreadCount();
+      }, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [user]);
+
+  const fetchUnreadCount = async () => {
+    try {
+      const response = await axios.get('/notifications/unread-count');
+      setUnreadCount(response.data.count);
+    } catch (error) {
+      console.error('Erreur chargement notifications:', error);
+    }
+  };
 
   useEffect(() => {
-    // 🔹 Charger les matrices depuis la base
-    axios.get('/api/matrices') // cette route doit renvoyer toutes les matrices { label, value }
+    axios.get('/api/matrices')
       .then(res => {
-        setTypesChiffrage(res.data); // met les matrices dans l'état
+        setTypesChiffrage(res.data);
       })
       .catch(err => console.error(err));
   }, []);
 
-  // 🔹 Définition des items du menu
   const getSidebarItems = () => {
     const base = [
       { 
@@ -133,32 +134,31 @@ export default function AuthenticatedLayout({ user, header, children, noWrapper 
             {/* Utilisateur + menu */}
             <div className="flex items-center space-x-4">
               {/* Icône de notifications */}
-                       
-                {user?.role === 'admin' ? (
-                  <Link 
-                    href="/admin/notifications" 
-                    className="relative p-2 text-gray-600 hover:text-[#26658C] transition-colors"
-                  >
-                    <FaBell className="h-5 w-5" />
-                    {unreadCount > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full text-xs w-5 h-5 flex items-center justify-center animate-pulse">
-                        {unreadCount > 9 ? '9+' : unreadCount}
-                      </span>
-                    )}
-                  </Link>
-                ) : (
-                  <Link 
-                    href="/user/notifications" 
-                    className="relative p-2 text-gray-600 hover:text-[#26658C] transition-colors"
-                  >
-                    <FaBell className="h-5 w-5" />
-                    {unreadCount > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full text-xs w-5 h-5 flex items-center justify-center animate-pulse">
-                        {unreadCount > 9 ? '9+' : unreadCount}
-                      </span>
-                    )}
-                  </Link>
-                )}
+              {user?.role === 'admin' ? (
+                <Link 
+                  href="/admin/notifications" 
+                  className="relative p-2 text-gray-600 hover:text-[#26658C] transition-colors"
+                >
+                  <FaBell className="h-5 w-5" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full text-xs w-5 h-5 flex items-center justify-center animate-pulse">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </Link>
+              ) : (
+                <Link 
+                  href="/user/notifications" 
+                  className="relative p-2 text-gray-600 hover:text-[#26658C] transition-colors"
+                >
+                  <FaBell className="h-5 w-5" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full text-xs w-5 h-5 flex items-center justify-center animate-pulse">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </Link>
+              )}
 
               <div className="hidden md:block text-right">
                 <p className="text-sm font-medium text-gray-900">{getFullName()}</p>
@@ -214,30 +214,32 @@ export default function AuthenticatedLayout({ user, header, children, noWrapper 
 
                           {selectedChiffrage === type.value && (
                             <div className="ml-4 mt-1 space-y-1">
-                                  <Link
-                                                href={route('demandes.create', { matrice_id: type.id })}
-                                                className="block py-2 px-3 bg-green-50 text-green-700 text-xs rounded-md hover:bg-green-100 flex items-center space-x-2"
-                                                onClick={() => setSidebarOpen(false)}
-                                            >
-                                                <span>Nouveau</span>
-                                  </Link>
+                              {/* Liens pour Nouveau, Sauvegarde et Historique */}
+                              <Link
+                                href={`/demandes/create?matrice_id=${type.id}`}
+                                className="block py-2 px-3 bg-green-50 text-green-700 text-xs rounded-md hover:bg-green-100 flex items-center space-x-2"
+                                onClick={() => setSidebarOpen(false)}
+                              >
+                                <span>Nouveau</span>
+                              </Link>
 
-                                <Link
-                                  href={route('chiffrage.historique', { matrice_id: type.id })}
-                                  className="block py-2 px-3 bg-purple-50 text-purple-700 text-xs rounded-md hover:bg-purple-100 flex items-center space-x-2"
-                                  onClick={() => setSidebarOpen(false)}
-                                >
-                                  <FaHistory className="w-3 h-3" />
-                                  <span>Historique</span>
-                                </Link>
-                               {/* <Link
-                                            href={`/chiffrage/modifier?matrice_id=${type.id}`}
-                                            className="block py-2 px-3 bg-yellow-50 text-yellow-700 text-xs rounded-md hover:bg-yellow-100 flex items-center space-x-2"
-                                            onClick={() => setSidebarOpen(false)}
-                                          >
-                                            <span>Modifier</span>
-                                          </Link> */}
+                              <Link
+                                href={`/sauvegardes?matrice_id=${type.id}`}
+                                className="block py-2 px-3 bg-orange-50 text-orange-700 text-xs rounded-md hover:bg-orange-100 flex items-center space-x-2"
+                                onClick={() => setSidebarOpen(false)}
+                              >
+                                <FaSave className="w-3 h-3" />
+                                <span>Sauvegarde</span>
+                              </Link>
 
+                              <Link
+                                href={`/chiffrage/historique?matrice_id=${type.id}`}
+                                className="block py-2 px-3 bg-purple-50 text-purple-700 text-xs rounded-md hover:bg-purple-100 flex items-center space-x-2"
+                                onClick={() => setSidebarOpen(false)}
+                              >
+                                <FaHistory className="w-3 h-3" />
+                                <span>Historique</span>
+                              </Link>
                             </div>
                           )}
                         </div>
@@ -259,7 +261,7 @@ export default function AuthenticatedLayout({ user, header, children, noWrapper 
           ))}
         </div>
 
-        {/* 🔹 Profil / Déconnexion (collé en bas) */}
+        {/* 🔹 Profil / Déconnexion */}
         <div className="border-t p-4 bg-gray-50">
           <Link
             href={route('profile.edit')}

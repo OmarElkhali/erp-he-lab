@@ -7,6 +7,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\DemandeController;
 use App\Http\Controllers\ComposantController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\SauvegardeController;
 use App\Models\Matrice;
 use App\Models\Ville;
 use Illuminate\Support\Facades\Log; 
@@ -15,22 +16,13 @@ use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
- Route::get('/', function () {
+Route::get('/', function () {
     return redirect()->route('login');
 });
 
-// Route::get('/', function () {
-//     return Inertia::render('Welcome', [
-//         'canLogin' => Route::has('login'),
-//         'canRegister' => Route::has('register'),
-//         'laravelVersion' => Application::VERSION,
-//         'phpVersion' => PHP_VERSION,
-//     ]);
-// });
+// ========== ROUTES API ACCESSIBLES SANS AUTH ==========
 
-// ========== ROUTES API ACCESSIBLES SANS AUTH (DOIT ÊTRE EN DEHORS DU GROUPE AUTH) ==========
-
-// API Villes - ACCESSIBLE SANS AUTHENTIFICATION (TRÈS IMPORTANT)
+// API Villes - ACCESSIBLE SANS AUTHENTIFICATION
 Route::get('/api/villes', function () {
     try {
         Log::info('📥 Requête API villes reçue');
@@ -90,20 +82,30 @@ Route::get('/user/dashboard', function () {
 Route::middleware(['auth', 'verified'])->group(function () {
     // Routes utilisateur
     Route::middleware(['can:isUser'])->group(function () {
-         // Demandes
-        Route::get('/demandes/nouveau', [DemandeController::class, 'create'])->name('demandes.create'); 
+        // ✅ CORRECTION : Route pour créer une nouvelle demande - IMPORTANT
+        Route::get('/demandes/create', [DemandeController::class, 'create'])->name('demandes.create'); 
         Route::post('/demandes', [DemandeController::class, 'store'])->name('demandes.store');
         Route::get('/historique/matrice/{matrice_id}', [DemandeController::class, 'historiqueMatrice'])->name('historique.matrice');
         Route::get('/demandes/{demande}', [DemandeController::class, 'show'])->name('demandes.show');
         Route::get('/demandes/{demande}/edit', [DemandeController::class, 'edit'])->name('demandes.edit');
         Route::put('/demandes/{demande}', [DemandeController::class, 'update'])->name('demandes.update');
         Route::delete('/demandes/{demande}', [DemandeController::class, 'destroy'])->name('demandes.destroy');
-        Route::get('/api/demandes/{demande}/cout', [ChiffrageController::class, 'getCoutDemande']);
+        
+        // Routes pour le chiffrage
         Route::get('/api/demandes/{demande}/cout', [ChiffrageController::class, 'getCoutDemande']);
         Route::get('/api/demandes/{demande}/cout-sans-deplacement', [ChiffrageController::class, 'getCoutSansDeplacement']);
         
+        // ✅ ROUTES POUR LES SAUVEGARDES
+        Route::get('/sauvegardes', [SauvegardeController::class, 'index'])->name('sauvegardes.index');
+        Route::post('/sauvegardes', [SauvegardeController::class, 'store'])->name('sauvegardes.store');
+        Route::get('/sauvegardes/{sauvegarde}', [SauvegardeController::class, 'show'])->name('sauvegardes.show');
+        Route::put('/sauvegardes/{sauvegarde}', [SauvegardeController::class, 'update'])->name('sauvegardes.update');
+        Route::delete('/sauvegardes/{sauvegarde}', [SauvegardeController::class, 'destroy'])->name('sauvegardes.destroy');
+        Route::get('/api/sauvegardes/count', [SauvegardeController::class, 'getCount'])->name('sauvegardes.count');
+        Route::get('/api/sauvegardes/matrice/{matrice_id}', [SauvegardeController::class, 'getByMatrice']);
+        
         // Chiffrage (redirections)
-        Route::get('User/Chiffrage/Nouveau', function (Request $request) {
+        Route::get('/chiffrage/nouveau', function (Request $request) {
             $matrice_id = $request->query('matrice_id');
             return redirect()->route('demandes.create', ['matrice_id' => $matrice_id]);
         })->name('chiffrage.nouveau');
