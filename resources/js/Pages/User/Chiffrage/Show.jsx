@@ -243,65 +243,6 @@ const SitesTab = () => {
       </div>
 
       <div className="p-6 space-y-6">
-        {/* Section Coûts Fixes */}
-        <div className="overflow-x-auto">
-          <h3 className="text-md font-semibold text-gray-900 mb-3 flex items-center">
-            <FaFileAlt className="w-4 h-4 mr-2 text-gray-500" />
-            Coûts Fixes
-          </h3>
-          <table className="w-full border-collapse text-sm border border-gray-200">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Type</th>
-                <th className="border border-gray-300 px-3 py-2 text-right font-medium text-gray-700">Montant</th>
-                <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Description</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr className="hover:bg-gray-50">
-                <td className="border border-gray-300 px-3 py-2 font-medium">Rapport Total (C4)</td>
-                <td className="border border-gray-300 px-3 py-2 text-right font-semibold text-[#26658C]">
-                  {formatCurrency(coutDetails.detail.C4_rapport_total || 0)}
-                </td>
-                <td className="border border-gray-300 px-3 py-2 text-gray-600 text-sm">
-                  {coutDetails.detail.nombre_sites || 0} site(s) × 200 MAD
-                </td>
-              </tr>
-              <tr className="hover:bg-gray-50 bg-gray-50">
-                <td className="border border-gray-300 px-3 py-2 font-medium">Logistique Total (C5)</td>
-                <td className="border border-gray-300 px-3 py-2 text-right font-semibold text-[#26658C]">
-                  {formatCurrency(coutDetails.detail.C5_logistique_total || 0)}
-                </td>
-                <td className="border border-gray-300 px-3 py-2 text-gray-600 text-sm">
-                  {coutDetails.detail.nombre_sites || 0} site(s) × 300 MAD
-                </td>
-              </tr>
-              <tr className="hover:bg-gray-50">
-                <td className="border border-gray-300 px-3 py-2 font-medium">Déplacement Total (C6)</td>
-                <td className="border border-gray-300 px-3 py-2 text-right font-semibold text-[#26658C]">
-                  {formatCurrency(coutDetails.detail.C6_deplacement_total || 0)}
-                </td>
-                <td className="border border-gray-300 px-3 py-2 text-gray-600 text-sm">
-                  Frais uniques par ville
-                </td>
-              </tr>
-              <tr className="bg-blue-50 hover:bg-blue-100">
-                <td className="border border-gray-300 px-3 py-2 font-bold">Total Coûts Fixes</td>
-                <td className="border border-gray-300 px-3 py-2 text-right font-bold text-[#26658C]">
-                  {formatCurrency(
-                    (coutDetails.detail.C4_rapport_total || 0) + 
-                    (coutDetails.detail.C5_logistique_total || 0) + 
-                    (coutDetails.detail.C6_deplacement_total || 0)
-                  )}
-                </td>
-                <td className="border border-gray-300 px-3 py-2 text-gray-600 text-sm font-medium">
-                  C4 + C5 + C6
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
         {/* Détail par Poste avec Produits */}
         <div className="overflow-x-auto">
           <h3 className="text-md font-semibold text-gray-900 mb-3 flex items-center">
@@ -424,6 +365,66 @@ const SitesTab = () => {
             </div>
           )}
         </div>
+        {/* Section Coûts Fixes */}
+        <div className="overflow-x-auto">
+          <h3 className="text-md font-semibold text-gray-900 mb-3 flex items-center">
+            <FaFileAlt className="w-4 h-4 mr-2 text-gray-500" />
+            Coûts Fixes
+          </h3>
+          <table className="w-full border-collapse text-sm border border-gray-200">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Type</th>
+                <th className="border border-gray-300 px-3 py-2 text-right font-medium text-gray-700">Montant</th>
+                <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="hover:bg-gray-50">
+                <td className="border border-gray-300 px-3 py-2 font-medium">Rapport Total (C4)</td>
+                <td className="border border-gray-300 px-3 py-2 text-right font-semibold text-[#26658C]">
+                  {formatCurrency(coutDetails.detail.C4_rapport_total || 0)}
+                </td>
+                <td className="border border-gray-300 px-3 py-2 text-gray-600 text-sm">
+                  {coutDetails.detail.nombre_sites || 0} site(s) × 200 MAD
+                </td>
+              </tr>
+              <tr className="hover:bg-gray-50 bg-gray-50">
+                <td className="border border-gray-300 px-3 py-2 font-medium">Logistique Total (C5)</td>
+                <td className="border border-gray-300 px-3 py-2 text-right font-semibold text-[#26658C]">
+                  {formatCurrency(coutDetails.detail.C5_logistique_total || 0)}
+                </td>
+                <td className="border border-gray-300 px-3 py-2 text-gray-600 text-sm">
+                  {coutDetails.detail.nombre_sites || 0} site(s) × 300 MAD
+                </td>
+              </tr>
+              <tr className="hover:bg-gray-50">
+                <td className="border border-gray-300 px-3 py-2 font-medium">Déplacement Total (C6)</td>
+                <td className="border border-gray-300 px-3 py-2 text-right font-semibold text-[#26658C]">
+                  {formatCurrency(coutDetails.detail.C6_deplacement_total || 0)}
+                </td>
+                <td className="border border-gray-300 px-3 py-2 text-gray-600 text-sm">
+                  Frais uniques par ville
+                </td>
+              </tr>
+              <tr className="bg-blue-50 hover:bg-blue-100">
+                <td className="border border-gray-300 px-3 py-2 font-bold">Total Coûts Fixes</td>
+                <td className="border border-gray-300 px-3 py-2 text-right font-bold text-[#26658C]">
+                  {formatCurrency(
+                    (coutDetails.detail.C4_rapport_total || 0) + 
+                    (coutDetails.detail.C5_logistique_total || 0) + 
+                    (coutDetails.detail.C6_deplacement_total || 0)
+                  )}
+                </td>
+                <td className="border border-gray-300 px-3 py-2 text-gray-600 text-sm font-medium">
+                  C4 + C5 + C6
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        
 
         
 
