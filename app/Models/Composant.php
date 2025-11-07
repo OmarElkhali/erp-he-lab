@@ -10,14 +10,14 @@ class Composant extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
+      protected $fillable = [
         'nom',
         'cas_number',
+        'code_analyse', 
         'cout_analyse',
         'famille_id'
     ];
 
-    // Nouvelle relation avec produits
     public function produits()
     {
         return $this->belongsToMany(Produit::class, 'produit_composant');

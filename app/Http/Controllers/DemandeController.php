@@ -380,8 +380,8 @@ public function show(Demande $demande)
     $demande->load([
         'entreprise',
         'matrice', 
-        'sites.ville', // Tous les sites avec leur ville
-        'sites.postes.produits.composants.famille', // NOUVELLE RELATION
+        'sites.ville',
+        'sites.postes.produits.composants.famille' //
     ]);
 
     return Inertia::render('User/Chiffrage/Show', [

@@ -91,20 +91,24 @@ public function calculerCoutTotal(Demande $demande)
                         $coutProduit += $coutFamille;
                         
                         $detailFamillesProduit[] = [
-                            'famille' => $famille->libelle ?? 'Famille inconnue',
-                            'famille_id' => $familleId,
-                            'C1' => $C1_famille,
-                            'C2' => $C2_famille,
-                            'C3' => $C3_famille,
-                            'total_famille' => $coutFamille,
-                            'composants' => $composantsFamille->map(function($composant) {
-                                return [
-                                    'nom' => $composant->nom,
-                                    'cas_number' => $composant->cas_number,
-                                    'cout_analyse' => $composant->cout_analyse
-                                ];
-                            })
-                        ];
+    'famille' => $famille->libelle ?? 'Famille inconnue',
+    'famille_id' => $familleId,
+    'code_famille' => $famille->code ?? null, // Code de la famille
+    'code_preparation' => $famille->code_preparation ?? null, // Code préparation
+    'cout_preparation' => $famille->cout_preparation ?? null, // Coût préparation
+    'C1' => $C1_famille,
+    'C2' => $C2_famille,
+    'C3' => $C3_famille,
+    'total_famille' => $coutFamille,
+    'composants' => $composantsFamille->map(function($composant) {
+        return [
+            'nom' => $composant->nom,
+            'cas_number' => $composant->cas_number,
+            'code_analyse' => $composant->code_analyse ?? null, // Code analyse
+            'cout_analyse' => $composant->cout_analyse
+        ];
+    })
+];
                     }
                 }
                 
@@ -312,20 +316,25 @@ public function calculerCoutTotal(Demande $demande)
                     $coutFamille = $C1_famille + $C2_famille + $C3_famille;
                     $coutProduit += $coutFamille;
                     
-                    $detailFamillesProduit[] = [
-                        'famille' => $famille->libelle ?? 'Famille inconnue',
-                        'C1' => $C1_famille,
-                        'C2' => $C2_famille,
-                        'C3' => $C3_famille,
-                        'total_famille' => $coutFamille,
-                        'composants' => $composantsFamille->map(function($composant) {
-                            return [
-                                'nom' => $composant->nom,
-                                'cas_number' => $composant->cas_number,
-                                'cout_analyse' => $composant->cout_analyse
-                            ];
-                        })
-                    ];
+                  $detailFamillesProduit[] = [
+    'famille' => $famille->libelle ?? 'Famille inconnue',
+    'famille_id' => $familleId,
+    'code_famille' => $famille->code ?? ($famille->code_famille ?? 'N/A'), // Code de la famille
+    'code_preparation' => $famille->code_preparation ?? 'N/A', // Code préparation
+    'cout_preparation' => $famille->cout_preparation ?? 0, // Coût préparation
+    'C1' => $C1_famille,
+    'C2' => $C2_famille,
+    'C3' => $C3_famille,
+    'total_famille' => $coutFamille,
+    'composants' => $composantsFamille->map(function($composant) {
+        return [
+            'nom' => $composant->nom,
+            'cas_number' => $composant->cas_number,
+            'code_analyse' => $composant->code_analyse ?? ($composant->code ?? 'N/A'), // Code analyse
+            'cout_analyse' => $composant->cout_analyse
+        ];
+    })
+];
                 }
             }
             

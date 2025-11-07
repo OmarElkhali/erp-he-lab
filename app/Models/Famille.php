@@ -8,7 +8,7 @@ class Famille extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['code', 'libelle'];
+    protected $fillable = ['code', 'libelle','code_preparation','cout_preparation'];
 
     public function composants()
     {
