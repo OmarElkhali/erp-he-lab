@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, useForm } from '@inertiajs/react';
-import { FaEnvelope, FaLock, FaSignInAlt, FaSpinner, FaShieldAlt, FaUser, FaKey } from 'react-icons/fa';
+import { FaEnvelope, FaLock, FaSignInAlt, FaSpinner, FaShieldAlt, FaUser, FaKey, FaUserPlus } from 'react-icons/fa';
 
 export default function Login({ status, canResetPassword }) {
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -129,6 +129,19 @@ export default function Login({ status, canResetPassword }) {
                                             </div>
                                         )}
                                     </button>
+                                </div>
+
+                                {/* Lien vers Register */}
+                                <div className="text-center">
+                                    <p className="text-xs text-gray-600">
+                                        Pas de compte ?{' '}
+                                        <a
+                                            href={route('register')}
+                                            className="text-[#26658C] hover:text-blue-700 font-medium transition-colors inline-flex items-center"
+                                        >
+                                            Créer un compte
+                                        </a>
+                                    </p>
                                 </div>
                             </form>
 
