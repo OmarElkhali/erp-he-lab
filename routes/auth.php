@@ -8,14 +8,15 @@ use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
-    Route::get('register', [RegisteredUserController::class, 'create'])
+    Route::get('register', [RegisterController::class, 'create'])
                 ->name('register');
 
-    Route::post('register', [RegisteredUserController::class, 'store']);
+    Route::post('register', [RegisterController::class, 'store']);
 
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
                 ->name('login');
@@ -35,9 +36,19 @@ Route::middleware('guest')->group(function () {
                 ->name('password.store');
 });
 
+// Routes de vérification par code (accessibles sans être connecté)
+Route::get('verification/notice', [RegisterController::class, 'showVerificationForm'])
+            ->name('verification.notice');
+
+Route::post('verification/verify', [RegisterController::class, 'verify'])
+            ->name('verification.verify');
+
+Route::post('verification/resend', [RegisterController::class, 'resendCode'])
+            ->name('verification.resend');
+
 Route::middleware('auth')->group(function () {
     Route::get('verify-email', EmailVerificationPromptController::class)
-                ->name('verification.notice');
+                ->name('verification.prompt');
 
     Route::get('verify-email/{id}/{hash}', VerifyEmailController::class)
                 ->middleware(['signed', 'throttle:6,1'])

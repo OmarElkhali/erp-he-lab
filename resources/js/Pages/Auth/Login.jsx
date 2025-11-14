@@ -1,9 +1,11 @@
 import { useEffect } from 'react';
 import GuestLayout from '@/Layouts/GuestLayout';
-import { Head, useForm } from '@inertiajs/react';
-import { FaEnvelope, FaLock, FaSignInAlt, FaSpinner, FaShieldAlt, FaUser, FaKey, FaUserPlus } from 'react-icons/fa';
+import { Head, useForm, usePage } from '@inertiajs/react';
+import { FaEnvelope, FaLock, FaSignInAlt, FaSpinner, FaShieldAlt, FaUser, FaKey, FaUserPlus, FaCheckCircle } from 'react-icons/fa';
 
 export default function Login({ status, canResetPassword }) {
+    const { success } = usePage().props;
+
     const { data, setData, post, processing, errors, reset } = useForm({
         email: '',
         password: '',
@@ -43,6 +45,15 @@ export default function Login({ status, canResetPassword }) {
                         </div>
 
                         <div className="p-6">
+                            {success && (
+                                <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
+                                    <div className="flex items-center">
+                                        <FaCheckCircle className="w-4 h-4 text-green-600 mr-2 flex-shrink-0" />
+                                        <p className="text-green-700 text-sm">{success}</p>
+                                    </div>
+                                </div>
+                            )}
+
                             {status && (
                                 <div className="bg-green-50 border border-green-200 rounded-lg p-2 mb-4">
                                     <p className="text-green-700 text-xs text-center">{status}</p>

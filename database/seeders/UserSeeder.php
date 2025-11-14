@@ -15,20 +15,20 @@ class UserSeeder extends Seeder
     {
         // Créer l'utilisateur admin
         User::create([
-            'nom' => 'Admin',
-            'prenom' => 'System',
+            'nom_complet' => 'Admin System',
             'email' => 'admin@gmail.com',
             'password' => Hash::make('admin123'),
             'role' => 'admin',
+            'email_verified_at' => now(),
         ]);
 
         // Créer l'utilisateur standard
         User::create([
-            'nom' => 'User',
-            'prenom' => 'Standard',
+            'nom_complet' => 'User Standard',
             'email' => 'user@gmail.com',
             'password' => Hash::make('user123'),
             'role' => 'user',
+            'email_verified_at' => now(),
         ]);
     }
 }

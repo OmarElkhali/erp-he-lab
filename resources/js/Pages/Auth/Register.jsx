@@ -5,6 +5,7 @@ import { FaEnvelope, FaLock, FaUserPlus, FaSpinner, FaShieldAlt, FaKey } from 'r
 
 export default function Register() {
     const { data, setData, post, processing, errors, reset } = useForm({
+        nom_complet: '',
         email: '',
         password: '',
         password_confirmation: '',
@@ -44,6 +45,36 @@ export default function Register() {
 
                         <div className="p-6">
                             <form onSubmit={submit} className="space-y-4">
+                                {/* Champ Nom Complet */}
+                                <div>
+                                    <label htmlFor="nom_complet" className="block text-xs font-medium text-gray-700 mb-1">
+                                        <div className="flex items-center">
+                                            <FaUserPlus className="w-3 h-3 text-[#26658C] mr-2" />
+                                            Nom Complet
+                                        </div>
+                                    </label>
+                                    <div className="relative">
+                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <FaUserPlus className="h-3 w-3 text-gray-400" />
+                                        </div>
+                                        <input
+                                            type="text"
+                                            id="nom_complet"
+                                            value={data.nom_complet}
+                                            onChange={(e) => setData('nom_complet', e.target.value)}
+                                            className="block w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-[#26658C] focus:border-[#26658C] transition-colors"
+                                            placeholder="Votre nom complet"
+                                            required
+                                        />
+                                    </div>
+                                    {errors.nom_complet && (
+                                        <p className="mt-1 text-xs text-red-600 flex items-center">
+                                            <FaSpinner className="w-2 h-2 mr-1" />
+                                            {errors.nom_complet}
+                                        </p>
+                                    )}
+                                </div>
+
                                 {/* Champ Email */}
                                 <div>
                                     <label htmlFor="email" className="block text-xs font-medium text-gray-700 mb-1">
