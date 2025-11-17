@@ -30,24 +30,39 @@ class SauvegardeController extends Controller
             'matrice_id' => 'required|exists:matrices,id',
             'data' => 'required|array',
             'current_step' => 'required|integer',
-            'nom_sauvegarde' => 'nullable|string|max:255'
+            'nom_sauvegarde' => 'nullable|string|max:255',
+            'sauvegarde_id' => 'nullable|exists:sauvegardes,id' // 🔥 FIX: Permettre la mise à jour d'une sauvegarde existante
         ]);
 
         DB::beginTransaction();
 
         try {
-            $sauvegarde = Sauvegarde::updateOrCreate(
-                [
+            // 🔥 FIX: Si sauvegarde_id est fourni, mettre à jour la sauvegarde existante
+            if ($request->sauvegarde_id) {
+                $sauvegarde = Sauvegarde::findOrFail($request->sauvegarde_id);
+
+                // Vérifier que l'utilisateur est bien le propriétaire
+                if ($sauvegarde->user_id !== auth()->id()) {
+                    return response()->json(['error' => 'Non autorisé'], 403);
+                }
+
+                $sauvegarde->update([
+                    'data' => $request->data,
+                    'current_step' => $request->current_step,
+                    'nom_sauvegarde' => $request->nom_sauvegarde ?? $sauvegarde->nom_sauvegarde,
+                    'statut' => 'brouillon'
+                ]);
+            } else {
+                // 🔥 FIX: Créer une NOUVELLE sauvegarde (ne pas écraser)
+                $sauvegarde = Sauvegarde::create([
                     'user_id' => auth()->id(),
                     'matrice_id' => $request->matrice_id,
-                ],
-                [
                     'data' => $request->data,
                     'current_step' => $request->current_step,
                     'nom_sauvegarde' => $request->nom_sauvegarde ?? 'Brouillon ' . now()->format('d/m/Y H:i'),
                     'statut' => 'brouillon'
-                ]
-            );
+                ]);
+            }
 
             DB::commit();
 

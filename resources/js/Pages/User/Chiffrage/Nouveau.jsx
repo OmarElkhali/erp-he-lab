@@ -154,6 +154,11 @@ export default function Nouveau({ auth, matrice_id, matrice, sauvegarde_id }) {
         }
     };
 
+    // 🔧 Helper: Obtenir le token CSRF frais
+    const getFreshCsrfToken = () => {
+        return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    };
+
     // 🔧 Fonction de sauvegarde améliorée avec gestion CSRF
     const handleSaveDraft = async () => {
         // Validation basique pour la sauvegarde
@@ -168,22 +173,21 @@ export default function Nouveau({ auth, matrice_id, matrice, sauvegarde_id }) {
         }
 
         try {
-            // 🔥 FIX: S'assurer que le token CSRF est rafraîchi
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            // 🔥 FIX: Rafraîchir le token CSRF dans axios avant chaque requête
+            const csrfToken = getFreshCsrfToken();
+            axios.defaults.headers.common['X-CSRF-TOKEN'] = csrfToken;
 
             const response = await axios.post('/sauvegardes', {
                 matrice_id: data.matrice_id,
+                sauvegarde_id: sauvegarde_id || null, // 🔥 FIX: Passer l'ID si on modifie une sauvegarde existante
                 data: {
                     ...data,
                     sites: sites // 🔥 FIX: Utiliser la dernière version de sites
                 },
                 current_step: currentStep,
-                nom_sauvegarde: `Brouillon ${new Date().toLocaleDateString('fr-FR')} ${new Date().toLocaleTimeString('fr-FR')}`
-            }, {
-                headers: {
-                    'X-CSRF-TOKEN': csrfToken,
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
+                nom_sauvegarde: sauvegarde_id 
+                    ? `Brouillon modifié ${new Date().toLocaleTimeString('fr-FR')}` 
+                    : `Brouillon ${new Date().toLocaleDateString('fr-FR')} ${new Date().toLocaleTimeString('fr-FR')}`
             });
 
             // Nettoyer le localStorage après sauvegarde réussie
@@ -342,12 +346,31 @@ export default function Nouveau({ auth, matrice_id, matrice, sauvegarde_id }) {
     const handleSubmit = (e) => {
         e.preventDefault();
 
+        // 🔥 DEBUG: Afficher les données avant validation
+        console.log('📋 Données formulaire:', {
+            matrice_id: data.matrice_id,
+            ice: data.ice,
+            nom: data.nom,
+            email: data.email,
+            telephone: data.telephone,
+            sites: sites
+        });
+
         // 🔥 Validation 1: Informations de base
         if (!data.matrice_id || !data.ice || !data.nom || !data.email) {
+            const missingFields = [];
+            if (!data.matrice_id) missingFields.push('Type de matrice');
+            if (!data.ice) missingFields.push('ICE');
+            if (!data.nom) missingFields.push('Nom entreprise');
+            if (!data.email) missingFields.push('Email');
+
             Swal.fire({
                 icon: 'error',
                 title: 'Champs manquants',
-                text: 'Veuillez remplir tous les champs obligatoires de l\'entreprise',
+                html: `<p>Veuillez remplir les champs obligatoires:</p>
+                       <ul style="list-style: disc; text-align: left; padding-left: 30px; margin-top: 10px;">
+                         ${missingFields.map(f => `<li>${f}</li>`).join('')}
+                       </ul>`,
                 confirmButtonColor: '#26658C'
             });
             return;
@@ -461,16 +484,17 @@ export default function Nouveau({ auth, matrice_id, matrice, sauvegarde_id }) {
                     contact_tel_demande: data.telephone
                 };
 
-                // 🔥 FIX: Utiliser axios pour garantir le CSRF token
-                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                // 🔥 FIX: Rafraîchir le token CSRF avant soumission
+                const csrfToken = getFreshCsrfToken();
+                axios.defaults.headers.common['X-CSRF-TOKEN'] = csrfToken;
 
-                axios.post(route('demandes.store'), submissionData, {
-                    headers: {
-                        'X-CSRF-TOKEN': csrfToken,
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Accept': 'application/json'
-                    }
-                })
+                console.log('📤 Soumission demande:', {
+                    matrice_id: submissionData.matrice_id,
+                    sites_count: submissionData.sites?.length,
+                    entreprise: submissionData.nom
+                });
+
+                axios.post(route('demandes.store'), submissionData)
                 .then(response => {
                     // Nettoyer tous les brouillons
                     localStorage.removeItem('demande_draft');
