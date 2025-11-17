@@ -21,6 +21,7 @@ class DemandeController extends Controller
      public function create(Request $request)
     {
         $matriceId = $request->query('matrice_id');
+        $sauvegardeId = $request->query('sauvegarde_id'); // 🔥 FIX: Détecter si on vient d'une sauvegarde
         $matrice = null;
 
         if ($matriceId) {
@@ -33,6 +34,7 @@ class DemandeController extends Controller
         return Inertia::render('User/Chiffrage/Nouveau', [
             'auth' => ['user' => auth()->user()],
             'matrice_id' => $matriceId,
+            'sauvegarde_id' => $sauvegardeId, // 🔥 FIX: Passer l'ID de sauvegarde
             'matrice' => $matrice,
             'villes' => $villes // Passer les villes au frontend
         ]);
@@ -179,14 +181,34 @@ public function store(Request $request)
 
         DB::commit();
 
-        // 🔥 Retour avec message de succès
+        // 🔥 FIX: Retourner JSON pour axios
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Demande créée avec succès!',
+                'data' => [
+                    'demande_id' => $demande->id,
+                    'code_affaire' => $demande->code_affaire,
+                    'redirect_url' => route('user.dashboard')
+                ]
+            ], 200);
+        }
+
         return redirect()->route('user.dashboard')
             ->with('success', 'Demande créée avec succès! Code affaire: ' . $demande->code_affaire);
 
     } catch (\Illuminate\Validation\ValidationException $e) {
         DB::rollBack();
 
-        // 🔥 Erreurs de validation
+        // 🔥 FIX: Erreurs de validation en JSON
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur de validation',
+                'errors' => $e->errors()
+            ], 422);
+        }
+
         return back()->withErrors($e->errors())->withInput();
 
     } catch (\Exception $e) {
@@ -197,6 +219,15 @@ public function store(Request $request)
             'user_id' => auth()->id(),
             'trace' => $e->getTraceAsString()
         ]);
+
+        // 🔥 FIX: Retourner JSON pour axios
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la création de la demande',
+                'error' => $e->getMessage()
+            ], 500);
+        }
 
         return back()->withErrors([
             'error' => 'Erreur lors de la création de la demande: ' . $e->getMessage()

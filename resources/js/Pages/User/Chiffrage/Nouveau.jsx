@@ -7,10 +7,13 @@ import ProduitComposants from './ProduitComposants';
 import Swal from 'sweetalert2';
 import { FaCheck, FaArrowRight, FaArrowLeft, FaPlus, FaPaperPlane, FaSave } from 'react-icons/fa';
 
-export default function Nouveau({ auth, matrice_id, matrice }) {
+export default function Nouveau({ auth, matrice_id, matrice, sauvegarde_id }) {
     const [currentStep, setCurrentStep] = useState(1);
     const [villes, setVilles] = useState([]);
     const [loadingVilles, setLoadingVilles] = useState(true);
+
+    // 🔥 FIX: Vérifier si on vient d'une sauvegarde ou d'un nouveau
+    const isFromSauvegarde = sauvegarde_id !== undefined && sauvegarde_id !== null;
 
     const [sites, setSites] = useState([{
         nom_site: '',
@@ -324,7 +327,8 @@ export default function Nouveau({ auth, matrice_id, matrice }) {
             }
         };
 
-        if (matrice_id) {
+        // 🔥 FIX: Ne charger les brouillons QUE si on vient d'une sauvegarde
+        if (matrice_id && isFromSauvegarde) {
             // Attendre que le composant soit monté avant de charger
             const timer = setTimeout(() => {
                 loadDraft();
@@ -332,7 +336,7 @@ export default function Nouveau({ auth, matrice_id, matrice }) {
 
             return () => clearTimeout(timer);
         }
-    }, [matrice_id]);
+    }, [matrice_id, isFromSauvegarde]);
 
     // 🔧 Fonction de soumission finale améliorée avec validation complète
     const handleSubmit = (e) => {
@@ -457,45 +461,65 @@ export default function Nouveau({ auth, matrice_id, matrice }) {
                     contact_tel_demande: data.telephone
                 };
 
-                // 🔥 Soumettre avec Inertia
-                post(route('demandes.store'), {
-                    data: submissionData,
-                    onSuccess: () => {
-                        // Nettoyer tous les brouillons
-                        localStorage.removeItem('demande_draft');
-                        localStorage.removeItem(`demande_draft_${matrice_id}`);
+                // 🔥 FIX: Utiliser axios pour garantir le CSRF token
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
+                axios.post(route('demandes.store'), submissionData, {
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => {
+                    // Nettoyer tous les brouillons
+                    localStorage.removeItem('demande_draft');
+                    localStorage.removeItem(`demande_draft_${matrice_id}`);
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Demande soumise!',
+                        text: 'Votre demande a été enregistrée avec succès.',
+                        confirmButtonColor: '#26658C',
+                        timer: 2000,
+                        showConfirmButton: false
+                    }).then(() => {
+                        // Rediriger vers le dashboard après succès
+                        window.location.href = route('user.dashboard');
+                    });
+                })
+                .catch(error => {
+                    console.error('Erreurs de soumission:', error);
+
+                    const errors = error.response?.data?.errors || {};
+                    const errorMessage = error.response?.data?.message || 'Une erreur est survenue';
+
+                    // 🔥 Afficher les erreurs de manière détaillée
+                    const errorMessages = Object.keys(errors).map(key => {
+                        return `<li><strong>${key}:</strong> ${errors[key]}</li>`;
+                    }).join('');
+
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Erreur de soumission',
+                        html: errorMessages.length > 0
+                            ? `<ul style="list-style: disc; text-align: left; padding-left: 20px;">${errorMessages}</ul>`
+                            : errorMessage,
+                        confirmButtonColor: '#26658C',
+                        width: '600px'
+                    });
+
+                    // Si erreur 419, sauvegarder localement
+                    if (error.response?.status === 419) {
                         Swal.fire({
-                            icon: 'success',
-                            title: 'Demande soumise!',
-                            text: 'Votre demande a été enregistrée avec succès.',
+                            icon: 'warning',
+                            title: 'Session expirée',
+                            text: 'Votre session a expiré. Sauvegarde locale en cours...',
                             confirmButtonColor: '#26658C',
-                            timer: 2000,
-                            showConfirmButton: false
+                            timer: 2000
                         }).then(() => {
-                            reset();
-                        });
-                    },
-                    onError: (errors) => {
-                        console.error('Erreurs de soumission:', errors);
-
-                        // 🔥 Afficher les erreurs de manière détaillée
-                        const errorMessages = Object.keys(errors).map(key => {
-                            return `<li><strong>${key}:</strong> ${errors[key]}</li>`;
-                        }).join('');
-
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Erreur de soumission',
-                            html: errors.error || `<ul style="list-style: disc; text-align: left; padding-left: 20px;">${errorMessages}</ul>`,
-                            confirmButtonColor: '#26658C',
-                            width: '600px'
-                        });
-
-                        // Si erreur 419, sauvegarder localement
-                        if (errors.message && errors.message.includes('419')) {
                             handleSaveDraft();
-                        }
+                        });
                     }
                 });
             }

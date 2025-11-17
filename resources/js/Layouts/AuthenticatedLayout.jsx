@@ -1,16 +1,16 @@
 import { useState, useEffect } from 'react';
-import { Link } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import axios from 'axios';
-import { 
-  FaTachometerAlt, 
-  FaFileInvoiceDollar, 
-  FaChartLine, 
-  FaFlask, 
-  FaUsers, 
-  FaFileAlt, 
-  FaVial, 
-  FaUserCog, 
-  FaCog, 
+import {
+  FaTachometerAlt,
+  FaFileInvoiceDollar,
+  FaChartLine,
+  FaFlask,
+  FaUsers,
+  FaFileAlt,
+  FaVial,
+  FaUserCog,
+  FaCog,
   FaCalendarAlt,
   FaUser,
   FaSignOutAlt,
@@ -36,7 +36,7 @@ export default function AuthenticatedLayout({ user, header, children, noWrapper 
   useEffect(() => {
     if (user) {
       fetchUnreadCount();
-      
+
       // Polling toutes les 30 secondes seulement pour les notifications
       const interval = setInterval(() => {
         fetchUnreadCount();
@@ -64,25 +64,25 @@ export default function AuthenticatedLayout({ user, header, children, noWrapper 
 
   const getSidebarItems = () => {
     const base = [
-      { 
-        label: 'Dashboard', 
-        href: '/dashboard', 
-        icon: <FaTachometerAlt className="w-5 h-5 text-[#26658C]" /> 
+      {
+        label: 'Dashboard',
+        href: '/dashboard',
+        icon: <FaTachometerAlt className="w-5 h-5 text-[#26658C]" />
       }
     ];
 
     if (user.role === 'user') {
       return [
         ...base,
-        { 
-          label: 'Chiffrage', 
-          icon: <FaFileInvoiceDollar className="w-5 h-5 text-[#26658C]" />, 
-          subMenu: typesChiffrage 
+        {
+          label: 'Chiffrage',
+          icon: <FaFileInvoiceDollar className="w-5 h-5 text-[#26658C]" />,
+          subMenu: typesChiffrage
         },
-        { 
-          label: 'Résultats', 
-          href: '/resultats', 
-          icon: <FaChartLine className="w-5 h-5 text-[#26658C]" /> 
+        {
+          label: 'Résultats',
+          href: '/resultats',
+          icon: <FaChartLine className="w-5 h-5 text-[#26658C]" />
         },
       ];
     }
@@ -135,8 +135,8 @@ export default function AuthenticatedLayout({ user, header, children, noWrapper 
             <div className="flex items-center space-x-4">
               {/* Icône de notifications */}
               {user?.role === 'admin' ? (
-                <Link 
-                  href="/admin/notifications" 
+                <Link
+                  href="/admin/notifications"
                   className="relative p-2 text-gray-600 hover:text-[#26658C] transition-colors"
                 >
                   <FaBell className="h-5 w-5" />
@@ -147,8 +147,8 @@ export default function AuthenticatedLayout({ user, header, children, noWrapper 
                   )}
                 </Link>
               ) : (
-                <Link 
-                  href="/user/notifications" 
+                <Link
+                  href="/user/notifications"
                   className="relative p-2 text-gray-600 hover:text-[#26658C] transition-colors"
                 >
                   <FaBell className="h-5 w-5" />
@@ -217,7 +217,7 @@ export default function AuthenticatedLayout({ user, header, children, noWrapper 
                               {/* Liens pour Nouveau, Sauvegarde et Historique */}
                               <Link
                                 href={`/demandes/create?matrice_id=${type.id}`}
-                                className="block py-2 px-3 bg-green-50 text-green-700 text-xs rounded-md hover:bg-green-100 flex items-center space-x-2"
+                                className="flex items-center space-x-2 py-2 px-3 bg-green-50 text-green-700 text-xs rounded-md hover:bg-green-100"
                                 onClick={() => setSidebarOpen(false)}
                               >
                                 <span>Nouveau</span>
@@ -225,7 +225,7 @@ export default function AuthenticatedLayout({ user, header, children, noWrapper 
 
                               <Link
                                 href={`/sauvegardes?matrice_id=${type.id}`}
-                                className="block py-2 px-3 bg-orange-50 text-orange-700 text-xs rounded-md hover:bg-orange-100 flex items-center space-x-2"
+                                className="flex items-center space-x-2 py-2 px-3 bg-orange-50 text-orange-700 text-xs rounded-md hover:bg-orange-100"
                                 onClick={() => setSidebarOpen(false)}
                               >
                                 <FaSave className="w-3 h-3" />
@@ -234,7 +234,7 @@ export default function AuthenticatedLayout({ user, header, children, noWrapper 
 
                               <Link
                                 href={`/chiffrage/historique?matrice_id=${type.id}`}
-                                className="block py-2 px-3 bg-purple-50 text-purple-700 text-xs rounded-md hover:bg-purple-100 flex items-center space-x-2"
+                                className="flex items-center space-x-2 py-2 px-3 bg-purple-50 text-purple-700 text-xs rounded-md hover:bg-purple-100"
                                 onClick={() => setSidebarOpen(false)}
                               >
                                 <FaHistory className="w-3 h-3" />
@@ -272,16 +272,24 @@ export default function AuthenticatedLayout({ user, header, children, noWrapper 
             <span className="font-medium text-sm">Mon Profil</span>
           </Link>
 
-          <Link
-            href={route('logout')}
-            method="post"
-            as="button"
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              setSidebarOpen(false);
+
+              // 🔥 FIX: Utiliser router.post pour garantir le CSRF token
+              router.post(route('logout'), {}, {
+                preserveScroll: true,
+                onSuccess: () => {
+                  window.location.href = '/login';
+                }
+              });
+            }}
             className="flex items-center space-x-3 py-2 px-3 rounded-lg text-gray-700 hover:bg-red-50 w-full text-left"
-            onClick={() => setSidebarOpen(false)}
           >
             <FaSignOutAlt className="w-5 h-5 text-[#26658C]" />
             <span className="font-medium text-sm">Déconnexion</span>
-          </Link>
+          </button>
 
           <div className="mt-4 flex items-center space-x-3 p-3 bg-blue-100 rounded-lg">
             <div className="flex items-center justify-center w-10 h-10 rounded-full bg-[#26658C] text-white font-bold">

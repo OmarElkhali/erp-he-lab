@@ -34,7 +34,7 @@ class SauvegardeController extends Controller
         ]);
 
         DB::beginTransaction();
-        
+
         try {
             $sauvegarde = Sauvegarde::updateOrCreate(
                 [
@@ -74,6 +74,7 @@ class SauvegardeController extends Controller
         return Inertia::render('User/Chiffrage/Nouveau', [
             'auth' => ['user' => auth()->user()],
             'matrice_id' => $sauvegarde->matrice_id,
+            'sauvegarde_id' => $sauvegarde->id, // 🔥 FIX: Indiquer qu'on vient d'une sauvegarde
             'matrice' => $sauvegarde->matrice,
             'sauvegarde' => $sauvegarde,
             'villes' => $villes
@@ -129,7 +130,7 @@ class SauvegardeController extends Controller
     public function getCount()
     {
         $count = Sauvegarde::where('user_id', auth()->id())->count();
-        
+
         return response()->json(['count' => $count]);
     }
 }
