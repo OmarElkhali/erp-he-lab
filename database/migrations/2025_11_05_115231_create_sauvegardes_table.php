@@ -18,7 +18,8 @@ return new class extends Migration
             $table->enum('statut', ['brouillon', 'soumis'])->default('brouillon');
             $table->timestamps();
 
-            $table->unique(['user_id', 'matrice_id']);
+            // Supprimé la contrainte unique pour permettre plusieurs sauvegardes par matrice
+            // $table->unique(['user_id', 'matrice_id']);
         });
     }
 

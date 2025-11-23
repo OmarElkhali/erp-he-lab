@@ -30,8 +30,8 @@ export default function AuthenticatedLayout({ user, header, children, noWrapper 
 
   if (!user) return <div>Utilisateur non authentifié</div>;
 
-  const getUserInitial = () => user?.nom?.charAt(0)?.toUpperCase() || 'U';
-  const getFullName = () => `${user?.nom || ''} ${user?.prenom || ''}`.trim() || 'Utilisateur';
+  const getUserInitial = () => user?.nom_complet?.charAt(0)?.toUpperCase() || 'U';
+  const getFullName = () => user?.nom_complet || 'Utilisateur';
 
   useEffect(() => {
     if (user) {

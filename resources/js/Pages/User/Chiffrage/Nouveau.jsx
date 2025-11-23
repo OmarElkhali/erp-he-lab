@@ -185,8 +185,8 @@ export default function Nouveau({ auth, matrice_id, matrice, sauvegarde_id }) {
                     sites: sites // 🔥 FIX: Utiliser la dernière version de sites
                 },
                 current_step: currentStep,
-                nom_sauvegarde: sauvegarde_id 
-                    ? `Brouillon modifié ${new Date().toLocaleTimeString('fr-FR')}` 
+                nom_sauvegarde: sauvegarde_id
+                    ? `Brouillon modifié ${new Date().toLocaleTimeString('fr-FR')}`
                     : `Brouillon ${new Date().toLocaleDateString('fr-FR')} ${new Date().toLocaleTimeString('fr-FR')}`
             });
 
@@ -481,7 +481,8 @@ export default function Nouveau({ auth, matrice_id, matrice, sauvegarde_id }) {
                     sites: sites,
                     contact_nom_demande: data.nom_prenom,
                     contact_email_demande: data.email,
-                    contact_tel_demande: data.telephone
+                    contact_tel_demande: data.telephone,
+                    sauvegarde_id: sauvegarde_id || null // 🔥 FIX: Envoyer l'ID pour suppression après soumission
                 };
 
                 // 🔥 FIX: Rafraîchir le token CSRF avant soumission

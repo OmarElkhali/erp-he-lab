@@ -181,6 +181,14 @@ public function store(Request $request)
 
         DB::commit();
 
+        // 🔥 FIX: Supprimer la sauvegarde si elle existe
+        if ($request->has('sauvegarde_id')) {
+            $sauvegarde = Sauvegarde::find($request->sauvegarde_id);
+            if ($sauvegarde && $sauvegarde->user_id === auth()->id()) {
+                $sauvegarde->delete();
+            }
+        }
+
         // 🔥 FIX: Retourner JSON pour axios
         if ($request->expectsJson() || $request->ajax()) {
             return response()->json([
