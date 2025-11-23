@@ -12,6 +12,7 @@ use App\Models\Matrice;
 use App\Models\Composant;
 use App\Models\Produit;
 use App\Models\Ville;
+use App\Models\Sauvegarde;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
