@@ -21,18 +21,20 @@ class DemandeController extends Controller
      public function create(Request $request)
     {
         $matriceId = $request->query('matrice_id');
+        $sauvegardeId = $request->query('sauvegarde_id'); // 🔥 FIX: Détecter si on vient d'une sauvegarde
         $matrice = null;
-        
+
         if ($matriceId) {
             $matrice = Matrice::find($matriceId);
         }
-        
+
         // Charger les villes pour le formulaire
         $villes = Ville::all();
-        
+
         return Inertia::render('User/Chiffrage/Nouveau', [
             'auth' => ['user' => auth()->user()],
             'matrice_id' => $matriceId,
+            'sauvegarde_id' => $sauvegardeId, // 🔥 FIX: Passer l'ID de sauvegarde
             'matrice' => $matrice,
             'villes' => $villes // Passer les villes au frontend
         ]);
@@ -41,38 +43,68 @@ class DemandeController extends Controller
 
 public function store(Request $request)
 {
+    // 🔥 FIX: Validation des données entrantes
+    $validated = $request->validate([
+        'ice' => 'required|string|max:255',
+        'nom' => 'required|string|max:255',
+        'adresse' => 'required|string|max:500',
+        'nom_prenom' => 'required|string|max:255',
+        'contact_fonction' => 'required|string|max:255',
+        'telephone' => 'required|string|max:20',
+        'email' => 'required|email|max:255',
+        'matrice_id' => 'required|exists:matrices,id',
+        'sites' => 'required|array|min:1',
+        'sites.*.nom_site' => 'required|string|max:255',
+        'sites.*.ville_id' => 'required|exists:villes,id',
+        'sites.*.code_site' => 'nullable|string|max:50',
+        'sites.*.postes' => 'required|array|min:1',
+        'sites.*.postes.*.nom_poste' => 'required|string|max:255',
+        'sites.*.postes.*.zone_activite' => 'required|string|max:255',
+        'sites.*.postes.*.personnes_exposees' => 'nullable|integer|min:1',
+        'sites.*.postes.*.duree_shift' => 'nullable|numeric|min:1',
+        'sites.*.postes.*.duree_exposition_quotidienne' => 'nullable|numeric|min:0.25|max:24',
+        'sites.*.postes.*.nb_shifts' => 'nullable|integer|min:1',
+        'sites.*.postes.*.produits' => 'required|array|min:1',
+        'sites.*.postes.*.produits.*.nom' => 'required|string|max:255',
+        'sites.*.postes.*.produits.*.description' => 'required|string|max:1000',
+        'sites.*.postes.*.produits.*.composants' => 'required|array|min:1',
+        'sites.*.postes.*.produits.*.composants.*' => 'exists:composants,id',
+    ]);
+
     DB::beginTransaction();
-    
+
     try {
         // 1. Créer ou trouver l'entreprise
-         $entreprise = Entreprise::firstOrCreate(
-            ['ice' => $request->ice],
+        $entreprise = Entreprise::firstOrCreate(
+            ['ice' => $validated['ice']],
             [
-                'nom' => $request->nom,
-                'adresse' => $request->adresse,
-                'nom_prenom' => $request->nom_prenom,
-                'contact_fonction' => $request->contact_fonction,
-                'telephone' => $request->telephone,
-                'email' => $request->email,
+                'nom' => $validated['nom'],
+                'adresse' => $validated['adresse'],
+                'nom_prenom' => $validated['nom_prenom'],
+                'contact_fonction' => $validated['contact_fonction'],
+                'telephone' => $validated['telephone'],
+                'email' => $validated['email'],
             ]
         );
 
-        // 2. Créer la demande SANS site_id
-         $demande = Demande::create([
+        // 2. Créer la demande
+        $demande = Demande::create([
             'user_id' => auth()->id(),
             'entreprise_id' => $entreprise->id,
-            'matrice_id' => $request->matrice_id,
+            'matrice_id' => $validated['matrice_id'],
             'date_creation' => now(),
             'statut' => 'en_attente',
-            'contact_nom_demande' => $request->nom_prenom,
-            'contact_email_demande' => $request->contact_email_demande ?? $request->email,
-            'contact_tel_demande' => $request->contact_tel_demande ?? $request->telephone,
+            'contact_nom_demande' => $validated['nom_prenom'],
+            'contact_email_demande' => $request->contact_email_demande ?? $validated['email'],
+            'contact_tel_demande' => $request->contact_tel_demande ?? $validated['telephone'],
         ]);
 
-        // 3. Créer les sites avec demande_id
+        // 3. Créer les sites, postes et produits
         $totalPostesCount = 0;
-        
-        foreach ($request->sites as $siteData) {
+        $totalProduitsCount = 0;
+
+        foreach ($validated['sites'] as $siteData) {
+            // 🔥 Créer le site
             $site = Site::create([
                 'entreprise_id' => $entreprise->id,
                 'demande_id' => $demande->id,
@@ -81,31 +113,33 @@ public function store(Request $request)
                 'code_site' => $siteData['code_site'] ?? null,
             ]);
 
-            // Créer les postes pour CE SITE
-          if (isset($siteData['postes']) && is_array($siteData['postes'])) {
+            // 🔥 Créer les postes pour CE SITE
+            if (isset($siteData['postes']) && is_array($siteData['postes'])) {
                 foreach ($siteData['postes'] as $posteData) {
                     $poste = Poste::create([
                         'demande_id' => $demande->id,
                         'site_id' => $site->id,
                         'nom_poste' => $posteData['nom_poste'],
                         'zone_activite' => $posteData['zone_activite'],
-                        'personnes_exposees' => $posteData['personnes_exposees'],
-                        'duree_shift' => $posteData['duree_shift'],
-                        'duree_exposition_quotidienne' => $posteData['duree_exposition_quotidienne'],
-                        'nb_shifts' => $posteData['nb_shifts'],
+                        'personnes_exposees' => $posteData['personnes_exposees'] ?? null,
+                        'duree_shift' => $posteData['duree_shift'] ?? null,
+                        'duree_exposition_quotidienne' => $posteData['duree_exposition_quotidienne'] ?? null,
+                        'nb_shifts' => $posteData['nb_shifts'] ?? null,
                     ]);
                     $totalPostesCount++;
-                    // Créer les produits pour CE POSTE
-                   if (isset($posteData['produits']) && is_array($posteData['produits'])) {
+
+                    // 🔥 Créer les PRODUITS pour CE POSTE
+                    if (isset($posteData['produits']) && is_array($posteData['produits'])) {
                         foreach ($posteData['produits'] as $produitData) {
                             $produit = Produit::create([
                                 'poste_id' => $poste->id,
                                 'nom' => $produitData['nom'],
                                 'description' => $produitData['description'] ?? null,
                             ]);
+                            $totalProduitsCount++;
 
-                            // Attacher les composants au produit
-                            if (!empty($produitData['composants'])) {
+                            // 🔥 Attacher les COMPOSANTS au PRODUIT (table pivot)
+                            if (!empty($produitData['composants']) && is_array($produitData['composants'])) {
                                 $produit->composants()->attach($produitData['composants']);
                             }
                         }
@@ -114,11 +148,11 @@ public function store(Request $request)
             }
         }
 
-        // 4. ENVOYER LA NOTIFICATION
+        // 4. 🔥 ENVOYER LA NOTIFICATION aux admins
         $admins = User::where('role', 'admin')->get();
-        $matrice = Matrice::find($request->matrice_id);
-        $premierSite = $demande->premierSite(); // Utiliser la nouvelle méthode
-        
+        $matrice = Matrice::find($validated['matrice_id']);
+        $premierSite = $demande->premierSite();
+
         foreach ($admins as $admin) {
             Notification::create([
                 'user_id' => $admin->id,
@@ -128,15 +162,16 @@ public function store(Request $request)
                     'code_affaire' => $demande->code_affaire,
                     'entreprise' => $entreprise->nom,
                     'ice' => $entreprise->ice,
-                    'matrice' => $matrice->label,
+                    'matrice' => $matrice->label ?? 'Non spécifiée',
                     'site' => $premierSite->nom_site ?? 'Non spécifié',
                     'ville' => $premierSite->ville->nom ?? 'Non spécifiée',
                     'postes_count' => $totalPostesCount,
-                    'sites_count' => $demande->nombre_sites, // Utiliser l'accesseur
+                    'produits_count' => $totalProduitsCount,
+                    'sites_count' => $demande->nombre_sites,
                     'contact_nom' => $demande->contact_nom_demande,
                     'contact_email' => $demande->contact_email_demande,
                     'contact_tel' => $demande->contact_tel_demande,
-                    'date_creation' => $demande->date_creation,
+                    'date_creation' => $demande->date_creation->format('Y-m-d H:i:s'),
                     'user_id' => auth()->id(),
                 ],
                 'is_read' => false,
@@ -146,22 +181,64 @@ public function store(Request $request)
 
         DB::commit();
 
+        // 🔥 FIX: Retourner JSON pour axios
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Demande créée avec succès!',
+                'data' => [
+                    'demande_id' => $demande->id,
+                    'code_affaire' => $demande->code_affaire,
+                    'redirect_url' => route('user.dashboard')
+                ]
+            ], 200);
+        }
+
         return redirect()->route('user.dashboard')
             ->with('success', 'Demande créée avec succès! Code affaire: ' . $demande->code_affaire);
 
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        DB::rollBack();
+
+        // 🔥 FIX: Erreurs de validation en JSON
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur de validation',
+                'errors' => $e->errors()
+            ], 422);
+        }
+
+        return back()->withErrors($e->errors())->withInput();
+
     } catch (\Exception $e) {
         DB::rollBack();
-        
+
+        // 🔥 Autres erreurs
+        \Log::error('Erreur création demande: ' . $e->getMessage(), [
+            'user_id' => auth()->id(),
+            'trace' => $e->getTraceAsString()
+        ]);
+
+        // 🔥 FIX: Retourner JSON pour axios
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la création de la demande',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+
         return back()->withErrors([
             'error' => 'Erreur lors de la création de la demande: ' . $e->getMessage()
-        ]);
+        ])->withInput();
     }
 }
 
 public function historiqueMatrice($matrice_id)
 {
     $matrice = Matrice::findOrFail($matrice_id);
-    
+
     $demandes = Demande::with([
         'entreprise',
         'sites.ville', // Tous les sites avec leur ville
@@ -173,13 +250,13 @@ public function historiqueMatrice($matrice_id)
 
     // Calculer le coût total pour chaque demande
     $chiffrageController = new ChiffrageController();
-    
+
     $demandes->each(function ($demande) use ($chiffrageController) {
         $resultatCout = $chiffrageController->calculerCoutTotal($demande);
         $demande->cout_total_avec_deplacement = $resultatCout['total_avec_deplacement'];
         $demande->cout_total_sans_deplacement = $resultatCout['total_sans_deplacement'];
         $demande->detail_cout = $resultatCout['detail'];
-        
+
         // Utiliser les accesseurs pour les comptes
         $demande->nombre_sites = $demande->sites->count();
         $demande->nombre_postes = $demande->sites->sum(function($site) {
@@ -227,7 +304,7 @@ public function update(Request $request, Demande $demande)
     }
 
     DB::beginTransaction();
-    
+
     try {
         // 1. Mettre à jour l'entreprise
         $entreprise = Entreprise::updateOrCreate(
@@ -312,7 +389,7 @@ public function update(Request $request, Demande $demande)
 
     } catch (\Exception $e) {
         DB::rollBack();
-        
+
         return back()->withErrors([
             'error' => 'Erreur lors de la modification de la demande: ' . $e->getMessage()
         ]);
@@ -323,7 +400,7 @@ public function update(Request $request, Demande $demande)
 public function destroy(Demande $demande)
 {
     DB::beginTransaction();
-    
+
     try {
         // Vérifier que l'utilisateur peut supprimer cette demande
         if ($demande->user_id !== auth()->id()) {
@@ -369,7 +446,7 @@ public function destroy(Demande $demande)
 
     } catch (\Exception $e) {
         DB::rollBack();
-        
+
         return back()->withErrors([
             'error' => 'Erreur lors de la suppression: ' . $e->getMessage()
         ]);
@@ -379,7 +456,7 @@ public function show(Demande $demande)
 {
     $demande->load([
         'entreprise',
-        'matrice', 
+        'matrice',
         'sites.ville',
         'sites.postes.produits.composants.famille' //
     ]);
@@ -394,7 +471,7 @@ public function show(Demande $demande)
     {
         // Logique pour générer et télécharger le PDF
         // Vous pouvez utiliser Dompdf, TCPDF, etc.
-        
+
         return response()->json(['message' => 'Fonction de téléchargement à implémenter']);
     }
 }

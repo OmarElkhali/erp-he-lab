@@ -7,229 +7,22 @@ import ProduitComposants from './ProduitComposants';
 import Swal from 'sweetalert2';
 import { FaCheck, FaArrowRight, FaArrowLeft, FaPlus, FaPaperPlane, FaSave } from 'react-icons/fa';
 
-function PosteComposants({ poste, index, siteIndex, toggleComposant, updatePoste }) {
-    const [composants, setComposants] = useState([]);
-    const [searchNom, setSearchNom] = useState('');
-    const [searchCas, setSearchCas] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [selectedNom, setSelectedNom] = useState([]);
-    const [selectedCas, setSelectedCas] = useState([]);
-    const [produit, setProduit] = useState(poste.produit || '');
-
-    useEffect(() => {
-        setLoading(true);
-        axios.get('/api/composants')
-            .then(res => {
-                setComposants(res.data);
-                setLoading(false);
-            })
-            .catch(error => {
-                console.error('Erreur chargement composants:', error);
-                setComposants([]);
-                setLoading(false);
-            });
-    }, []);
-
-    const nomOptions = composants
-        .filter(c => searchNom === '' || c.nom.toLowerCase().includes(searchNom.toLowerCase()))
-        .map(c => ({
-            value: c.id,
-            label: c.nom,
-            nom: c.nom,
-            cas: c.cas_number
-        }));
-
-    const casOptions = composants
-        .filter(c => c.cas_number && (searchCas === '' || c.cas_number.includes(searchCas)))
-        .map(c => ({
-            value: c.id,
-            label: c.cas_number,
-            nom: c.nom,
-            cas: c.cas_number
-        }));
-
-    const handleNomChange = (selected) => {
-        const selectedIds = selected ? selected.map(s => s.value) : [];
-        setSelectedNom(selected || []);
-        
-        const correspondingCas = selected ? selected.map(s => {
-            const composant = composants.find(c => c.id === s.value);
-            return composant && composant.cas_number ? {
-                value: composant.id,
-                label: composant.cas_number,
-                nom: composant.nom,
-                cas: composant.cas_number
-            } : null;
-        }).filter(Boolean) : [];
-        
-        setSelectedCas(correspondingCas);
-        toggleComposant(siteIndex, index, selectedIds, produit);
-    };
-
-    const handleCasChange = (selected) => {
-        const selectedIds = selected ? selected.map(s => s.value) : [];
-        setSelectedCas(selected || []);
-        
-        const correspondingNoms = selected ? selected.map(s => {
-            const composant = composants.find(c => c.id === s.value);
-            return composant ? {
-                value: composant.id,
-                label: composant.nom,
-                nom: composant.nom,
-                cas: composant.cas_number
-            } : null;
-        }).filter(Boolean) : [];
-        
-        setSelectedNom(correspondingNoms);
-        toggleComposant(siteIndex, index, selectedIds, produit);
-    };
-
-    const handleProduitChange = (e) => {
-        const newProduit = e.target.value;
-        setProduit(newProduit);
-        const selectedIds = selectedNom.map(item => item.value);
-        toggleComposant(siteIndex, index, selectedIds, newProduit);
-    };
-
-    const handleDescriptionChange = (e) => {
-        updatePoste(siteIndex, index, 'description', e.target.value);
-    };
-
-    useEffect(() => {
-        if (composants.length > 0 && poste.composants && poste.composants.length > 0) {
-            const initialSelected = composants
-                .filter(composant => poste.composants.includes(composant.id))
-                .map(composant => ({
-                    value: composant.id,
-                    label: composant.nom,
-                    nom: composant.nom,
-                    cas: composant.cas_number
-                }));
-            
-            setSelectedNom(initialSelected);
-            
-            const initialCasSelected = composants
-                .filter(composant => poste.composants.includes(composant.id) && composant.cas_number)
-                .map(composant => ({
-                    value: composant.id,
-                    label: composant.cas_number,
-                    nom: composant.nom,
-                    cas: composant.cas_number
-                }));
-            
-            setSelectedCas(initialCasSelected);
-        }
-        
-        if (poste.produit) {
-            setProduit(poste.produit);
-        }
-    }, [composants, poste.composants, poste.produit]);
-
-    const formatOptionLabel = ({ nom, cas }, { context }) => {
-        if (context === 'menu') {
-            return (
-                <div className="flex flex-col py-1">
-                    <span className="font-medium text-sm">{nom}</span>
-                    {cas && <span className="text-xs text-gray-500">CAS: {cas}</span>}
-                </div>
-            );
-        }
-        
-        return (
-            <div className="flex flex-col">
-                <span className="font-medium text-sm">{nom}</span>
-                {cas && <span className="text-xs text-gray-500">CAS: {cas}</span>}
-            </div>
-        );
-    };
-
-    return (
-        <div className="space-y-3">
-            <div className="flex items-center space-x-4">
-                <label className="block text-sm font-medium text-gray-700 w-32">
-                    Produit <span className="text-red-500">*</span>
-                </label>
-                <input
-                    type="text"
-                    value={produit}
-                    onChange={handleProduitChange}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#26658C] focus:border-transparent transition duration-200"
-                    placeholder="Nom du produit à analyser"
-                    required
-                />
-            </div>
-
-            <div className="flex items-start space-x-4">
-                <label className="block text-sm font-medium text-gray-700 w-32 mt-2">
-                    Description <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                    value={poste.description}
-                    onChange={handleDescriptionChange}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#26658C] focus:border-transparent transition duration-200"
-                    rows="2"
-                    placeholder="Décrire les opérations réalisées"
-                    required
-                />
-            </div>
-
-            <div className="flex items-start space-x-4">
-                <label className="block text-sm font-medium text-gray-700 w-32 mt-2">
-                    Composants à analyser
-                </label>
-                <div className="flex-1 space-y-2">
-                    <Select
-                        options={nomOptions}
-                        isMulti
-                        onInputChange={value => setSearchNom(value)}
-                        onChange={handleNomChange}
-                        value={selectedNom}
-                        placeholder="Rechercher par nom..."
-                        noOptionsMessage={({ inputValue }) => inputValue ? "Aucun composant trouvé" : "Tapez pour rechercher..."}
-                        isLoading={loading}
-                        loadingMessage={() => "Chargement..."}
-                        className="react-select-container"
-                        classNamePrefix="react-select"
-                        formatOptionLabel={formatOptionLabel}
-                        closeMenuOnSelect={false}
-                        blurInputOnSelect={false}
-                    />
-                    
-                    <Select
-                        options={casOptions}
-                        isMulti
-                        onInputChange={value => setSearchCas(value)}
-                        onChange={handleCasChange}
-                        value={selectedCas}
-                        placeholder="Rechercher par CAS..."
-                        noOptionsMessage={({ inputValue }) => inputValue ? "Aucun composant trouvé" : "Tapez pour rechercher..."}
-                        isLoading={loading}
-                        loadingMessage={() => "Chargement..."}
-                        className="react-select-container"
-                        classNamePrefix="react-select"
-                        formatOptionLabel={formatOptionLabel}
-                        closeMenuOnSelect={false}
-                        blurInputOnSelect={false}
-                    />
-                </div>
-            </div>
-        </div>
-    );
-}
-
-export default function Nouveau({ auth, matrice_id, matrice }) {
+export default function Nouveau({ auth, matrice_id, matrice, sauvegarde_id }) {
     const [currentStep, setCurrentStep] = useState(1);
     const [villes, setVilles] = useState([]);
     const [loadingVilles, setLoadingVilles] = useState(true);
-    
-    const [sites, setSites] = useState([{ 
-        nom_site: '', 
+
+    // 🔥 FIX: Vérifier si on vient d'une sauvegarde ou d'un nouveau
+    const isFromSauvegarde = sauvegarde_id !== undefined && sauvegarde_id !== null;
+
+    const [sites, setSites] = useState([{
+        nom_site: '',
         ville_id: '',
         code_site: '',
-        postes: [{  
-            nom_poste: '', 
-            zone_activite: '', 
-            personnes_exposees: '', 
+        postes: [{
+            nom_poste: '',
+            zone_activite: '',
+            personnes_exposees: '',
             duree_shift: '',
             duree_exposition_quotidienne: '',
             nb_shifts: '',
@@ -250,7 +43,7 @@ export default function Nouveau({ auth, matrice_id, matrice }) {
         });
         setSites(newSites);
     };
-    
+
     const removeProduitFromPoste = (siteIndex, posteIndex, produitIndex) => {
         const newSites = [...sites];
         if (newSites[siteIndex].postes[posteIndex].produits.length > 1) {
@@ -258,13 +51,13 @@ export default function Nouveau({ auth, matrice_id, matrice }) {
             setSites(newSites);
         }
     };
-    
+
     const updateProduitInPoste = (siteIndex, posteIndex, produitIndex, field, value) => {
         const newSites = [...sites];
         newSites[siteIndex].postes[posteIndex].produits[produitIndex][field] = value;
         setSites(newSites);
     };
-    
+
     const toggleComposantInProduit = (siteIndex, posteIndex, produitIndex, composantIds) => {
         const newSites = [...sites];
         newSites[siteIndex].postes[posteIndex].produits[produitIndex].composants = composantIds;
@@ -274,9 +67,9 @@ export default function Nouveau({ auth, matrice_id, matrice }) {
     const addPosteToSite = (siteIndex) => {
         const newSites = [...sites];
         newSites[siteIndex].postes.push({
-            nom_poste: '', 
-            zone_activite: '', 
-            personnes_exposees: '', 
+            nom_poste: '',
+            zone_activite: '',
+            personnes_exposees: '',
             duree_shift: '',
             duree_exposition_quotidienne: '',
             nb_shifts: '',
@@ -350,7 +143,7 @@ export default function Nouveau({ auth, matrice_id, matrice }) {
                     ice: entreprise.ice,
                     nom: entreprise.nom,
                     adresse: entreprise.adresse,
-                    nom_prenom: entreprise.nom_prenom || "", 
+                    nom_prenom: entreprise.nom_prenom || "",
                     contact_fonction: entreprise.contact_fonction || "",
                     telephone: entreprise.telephone,
                     email: entreprise.email,
@@ -361,179 +154,411 @@ export default function Nouveau({ auth, matrice_id, matrice }) {
         }
     };
 
-   // Dans votre composant Nouveau.jsx, modifiez la fonction handleSaveDraft :
-
-
-
-const handleSaveDraft = async () => {
-    // Validation basique pour la sauvegarde
-    if (!data.ice || !data.nom) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Informations manquantes',
-            text: 'Veuillez remplir au moins les informations de base de l\'entreprise pour sauvegarder',
-            confirmButtonColor: '#26658C'
-        });
-        return;
-    }
-
-    try {
-        const response = await axios.post('/sauvegardes', {
-            matrice_id: data.matrice_id,
-            data: data,
-            current_step: currentStep,
-            nom_sauvegarde: `Brouillon ${new Date().toLocaleDateString('fr-FR')}`
-        });
-        localStorage.removeItem('demande_draft');
-        await Swal.fire({
-            icon: 'success',
-            title: 'Brouillon sauvegardé!',
-            confirmButtonColor: '#26658C',
-            timer: 1500,
-            showConfirmButton: false
-        });
-        router.visit('/sauvegardes');
-        
-    } catch (error) {
-        console.error('Erreur sauvegarde:', error);
-        const draftData = {
-            ...data,
-            statut: 'brouillon',
-            saved_at: new Date().toISOString(),
-            current_step: currentStep
-        };
-
-        localStorage.setItem('demande_draft', JSON.stringify(draftData));
-        
-        Swal.fire({
-            icon: 'success',
-            title: 'Brouillon sauvegardé localement!',
-            text: 'Votre demande a été sauvegardée localement. Vous pouvez continuer plus tard.',
-            confirmButtonColor: '#26658C',
-            timer: 2000
-        });
-    }
-};
-
-// Ajouter cette fonction pour charger une sauvegarde existante
-useEffect(() => {
-    const loadDraft = async () => {
-        // Vérifier si on a une sauvegarde serveur pour cette matrice
-        if (matrice_id) {
-            try {
-                const response = await axios.get(`/api/sauvegardes/matrice/${matrice_id}`);
-                if (response.data) {
-                    const savedData = response.data;
-                    setData(prevData => ({ ...prevData, ...savedData.data }));
-                    setSites(savedData.data.sites || []);
-                    setCurrentStep(savedData.current_step || 1);
-                    
-                    Swal.fire({
-                        icon: 'info',
-                        title: 'Brouillon chargé',
-                        text: 'Votre brouillon précédent a été chargé automatiquement.',
-                        confirmButtonColor: '#26658C',
-                        timer: 2000
-                    });
-                    return;
-                }
-            } catch (error) {
-                console.log('Aucune sauvegarde serveur trouvée');
-            }
-        }
-
-        // Fallback: vérifier le localStorage
-        const savedDraft = localStorage.getItem('demande_draft');
-        if (savedDraft) {
-            const draftData = JSON.parse(savedDraft);
-            if (draftData.matrice_id === matrice_id) {
-                setData(prevData => ({ ...prevData, ...draftData }));
-                setSites(draftData.sites || []);
-                setCurrentStep(draftData.current_step || 1);
-                
-                Swal.fire({
-                    icon: 'info',
-                    title: 'Brouillon chargé',
-                    text: 'Votre brouillon local a été chargé automatiquement.',
-                    confirmButtonColor: '#26658C',
-                    timer: 2000
-                });
-            }
-        }
+    // 🔧 Helper: Obtenir le token CSRF frais
+    const getFreshCsrfToken = () => {
+        return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
     };
 
-    if (matrice_id) {
-        loadDraft();
-    }
-}, [matrice_id]);
-
-    // Fonction pour soumettre définitivement
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        
-        if (!data.matrice_id || !data.ice || !data.nom || data.sites.length === 0) {
+    // 🔧 Fonction de sauvegarde améliorée avec gestion CSRF
+    const handleSaveDraft = async () => {
+        // Validation basique pour la sauvegarde
+        if (!data.ice || !data.nom) {
             Swal.fire({
-                icon: 'error',
-                title: 'Champs manquants',
-                text: 'Veuillez remplir tous les champs obligatoires',
+                icon: 'warning',
+                title: 'Informations manquantes',
+                text: 'Veuillez remplir au moins les informations de base de l\'entreprise pour sauvegarder',
                 confirmButtonColor: '#26658C'
             });
             return;
         }
 
+        try {
+            // 🔥 FIX: Rafraîchir le token CSRF dans axios avant chaque requête
+            const csrfToken = getFreshCsrfToken();
+            axios.defaults.headers.common['X-CSRF-TOKEN'] = csrfToken;
+
+            const response = await axios.post('/sauvegardes', {
+                matrice_id: data.matrice_id,
+                sauvegarde_id: sauvegarde_id || null, // 🔥 FIX: Passer l'ID si on modifie une sauvegarde existante
+                data: {
+                    ...data,
+                    sites: sites // 🔥 FIX: Utiliser la dernière version de sites
+                },
+                current_step: currentStep,
+                nom_sauvegarde: sauvegarde_id 
+                    ? `Brouillon modifié ${new Date().toLocaleTimeString('fr-FR')}` 
+                    : `Brouillon ${new Date().toLocaleDateString('fr-FR')} ${new Date().toLocaleTimeString('fr-FR')}`
+            });
+
+            // Nettoyer le localStorage après sauvegarde réussie
+            localStorage.removeItem('demande_draft');
+            localStorage.removeItem(`demande_draft_${matrice_id}`);
+
+            await Swal.fire({
+                icon: 'success',
+                title: 'Brouillon sauvegardé!',
+                text: 'Votre demande a été sauvegardée sur le serveur.',
+                confirmButtonColor: '#26658C',
+                timer: 1500,
+                showConfirmButton: false
+            });
+
+        } catch (error) {
+            console.error('Erreur sauvegarde serveur:', error);
+
+            // 🔥 FIX: Sauvegarde locale de secours avec clé spécifique à la matrice
+            const draftData = {
+                ...data,
+                sites: sites,
+                statut: 'brouillon',
+                saved_at: new Date().toISOString(),
+                current_step: currentStep
+            };
+
+            localStorage.setItem(`demande_draft_${matrice_id}`, JSON.stringify(draftData));
+
+            Swal.fire({
+                icon: 'info',
+                title: 'Sauvegardé localement',
+                text: error.response?.status === 419
+                    ? 'Session expirée. Brouillon sauvegardé localement. Rechargez la page.'
+                    : 'Brouillon sauvegardé dans votre navigateur.',
+                confirmButtonColor: '#26658C',
+                timer: 3000
+            });
+        }
+    };
+
+    // 🔧 Fonction de chargement améliorée au démarrage
+    useEffect(() => {
+        const loadDraft = async () => {
+            // Priorité 1: Charger depuis le serveur
+            if (matrice_id) {
+                try {
+                    const response = await axios.get(`/api/sauvegardes/matrice/${matrice_id}`);
+                    if (response.data && response.data.data) {
+                        const savedData = response.data.data;
+
+                        // 🔥 FIX: Reconstruire complètement les données
+                        setData(prevData => ({
+                            ...prevData,
+                            ...savedData,
+                            matrice_id: matrice_id
+                        }));
+
+                        // 🔥 FIX: S'assurer que sites a la bonne structure
+                        if (savedData.sites && Array.isArray(savedData.sites)) {
+                            setSites(savedData.sites);
+                        }
+
+                        setCurrentStep(response.data.current_step || 1);
+
+                        Swal.fire({
+                            icon: 'info',
+                            title: 'Brouillon chargé',
+                            html: `<p>Votre brouillon <b>"${response.data.nom_sauvegarde}"</b> a été restauré.</p>`,
+                            confirmButtonColor: '#26658C',
+                            timer: 2500,
+                            showConfirmButton: false
+                        });
+                        return;
+                    }
+                } catch (error) {
+                    console.log('Aucune sauvegarde serveur trouvée:', error.message);
+                }
+            }
+
+            // Priorité 2: Charger depuis le localStorage (spécifique à la matrice)
+            const savedDraftMatrice = localStorage.getItem(`demande_draft_${matrice_id}`);
+            if (savedDraftMatrice) {
+                try {
+                    const draftData = JSON.parse(savedDraftMatrice);
+
+                    setData(prevData => ({
+                        ...prevData,
+                        ...draftData,
+                        matrice_id: matrice_id
+                    }));
+
+                    if (draftData.sites && Array.isArray(draftData.sites)) {
+                        setSites(draftData.sites);
+                    }
+
+                    setCurrentStep(draftData.current_step || 1);
+
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Brouillon local restauré',
+                        text: `Sauvegardé le ${new Date(draftData.saved_at).toLocaleString('fr-FR')}`,
+                        confirmButtonColor: '#26658C',
+                        timer: 2500,
+                        showConfirmButton: false
+                    });
+                    return;
+                } catch (e) {
+                    console.error('Erreur parsing brouillon local:', e);
+                    localStorage.removeItem(`demande_draft_${matrice_id}`);
+                }
+            }
+
+            // Priorité 3: Ancien format de localStorage (migration)
+            const savedDraftOld = localStorage.getItem('demande_draft');
+            if (savedDraftOld && matrice_id) {
+                try {
+                    const draftData = JSON.parse(savedDraftOld);
+                    if (draftData.matrice_id === matrice_id) {
+                        setData(prevData => ({ ...prevData, ...draftData }));
+                        setSites(draftData.sites || sites);
+                        setCurrentStep(draftData.current_step || 1);
+
+                        // Migrer vers le nouveau format
+                        localStorage.setItem(`demande_draft_${matrice_id}`, savedDraftOld);
+                        localStorage.removeItem('demande_draft');
+
+                        Swal.fire({
+                            icon: 'info',
+                            title: 'Brouillon restauré',
+                            text: 'Ancien brouillon migré vers le nouveau système.',
+                            confirmButtonColor: '#26658C',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                    }
+                } catch (e) {
+                    console.error('Erreur migration brouillon:', e);
+                    localStorage.removeItem('demande_draft');
+                }
+            }
+        };
+
+        // 🔥 FIX: Ne charger les brouillons QUE si on vient d'une sauvegarde
+        if (matrice_id && isFromSauvegarde) {
+            // Attendre que le composant soit monté avant de charger
+            const timer = setTimeout(() => {
+                loadDraft();
+            }, 500);
+
+            return () => clearTimeout(timer);
+        }
+    }, [matrice_id, isFromSauvegarde]);
+
+    // 🔧 Fonction de soumission finale améliorée avec validation complète
+    const handleSubmit = (e) => {
+        e.preventDefault();
+
+        // 🔥 DEBUG: Afficher les données avant validation
+        console.log('📋 Données formulaire:', {
+            matrice_id: data.matrice_id,
+            ice: data.ice,
+            nom: data.nom,
+            email: data.email,
+            telephone: data.telephone,
+            sites: sites
+        });
+
+        // 🔥 Validation 1: Informations de base
+        if (!data.matrice_id || !data.ice || !data.nom || !data.email) {
+            const missingFields = [];
+            if (!data.matrice_id) missingFields.push('Type de matrice');
+            if (!data.ice) missingFields.push('ICE');
+            if (!data.nom) missingFields.push('Nom entreprise');
+            if (!data.email) missingFields.push('Email');
+
+            Swal.fire({
+                icon: 'error',
+                title: 'Champs manquants',
+                html: `<p>Veuillez remplir les champs obligatoires:</p>
+                       <ul style="list-style: disc; text-align: left; padding-left: 30px; margin-top: 10px;">
+                         ${missingFields.map(f => `<li>${f}</li>`).join('')}
+                       </ul>`,
+                confirmButtonColor: '#26658C'
+            });
+            return;
+        }
+
+        // 🔥 Validation 2: Sites
+        if (!sites || sites.length === 0) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Sites manquants',
+                text: 'Veuillez ajouter au moins un site d\'intervention',
+                confirmButtonColor: '#26658C'
+            });
+            return;
+        }
+
+        // 🔥 Validation 3: Postes et Produits
         let hasPostes = false;
-        for (const site of data.sites) {
+        let hasProduits = false;
+        let validationErrors = [];
+
+        sites.forEach((site, siteIndex) => {
+            if (!site.nom_site || !site.ville_id) {
+                validationErrors.push(`Site ${siteIndex + 1}: Nom responsable et ville requis`);
+            }
+
             if (site.postes && site.postes.length > 0) {
                 hasPostes = true;
-                break;
+
+                site.postes.forEach((poste, posteIndex) => {
+                    if (!poste.nom_poste || !poste.zone_activite) {
+                        validationErrors.push(`Site ${siteIndex + 1}, Poste ${posteIndex + 1}: Nom poste et zone requis`);
+                    }
+
+                    if (poste.produits && poste.produits.length > 0) {
+                        hasProduits = true;
+
+                        poste.produits.forEach((produit, produitIndex) => {
+                            if (!produit.nom || !produit.description) {
+                                validationErrors.push(`Site ${siteIndex + 1}, Poste ${posteIndex + 1}, Produit ${produitIndex + 1}: Nom et description requis`);
+                            }
+
+                            if (!produit.composants || produit.composants.length === 0) {
+                                validationErrors.push(`Site ${siteIndex + 1}, Poste ${posteIndex + 1}, Produit ${produitIndex + 1}: Au moins un composant requis`);
+                            }
+                        });
+                    }
+                });
             }
-        }
+        });
 
         if (!hasPostes) {
             Swal.fire({
                 icon: 'error',
                 title: 'Postes manquants',
-                text: 'Veuillez ajouter au moins un poste dans un site',
+                text: 'Veuillez ajouter au moins un poste de travail',
                 confirmButtonColor: '#26658C'
             });
             return;
         }
-        
-        post(route('demandes.store'), {
-            onSuccess: () => {
-                // Supprimer le brouillon sauvegardé
-                localStorage.removeItem('demande_draft');
-                
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Succès!',
-                    text: 'Votre demande a été soumise avec succès!',
-                    confirmButtonColor: '#26658C',
-                    timer: 3000
+
+        if (!hasProduits) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Produits manquants',
+                text: 'Veuillez ajouter au moins un produit à analyser',
+                confirmButtonColor: '#26658C'
+            });
+            return;
+        }
+
+        if (validationErrors.length > 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Validation échouée',
+                html: `<div class="text-left"><ul style="list-style: disc; padding-left: 20px;">${validationErrors.map(err => `<li>${err}</li>`).join('')}</ul></div>`,
+                confirmButtonColor: '#26658C',
+                width: '600px'
+            });
+            return;
+        }
+
+        // 🔥 Confirmation avant soumission
+        Swal.fire({
+            icon: 'question',
+            title: 'Confirmer la soumission',
+            html: `
+                <div class="text-left space-y-2">
+                    <p><strong>Entreprise:</strong> ${data.nom}</p>
+                    <p><strong>ICE:</strong> ${data.ice}</p>
+                    <p><strong>Sites:</strong> ${sites.length}</p>
+                    <p><strong>Postes:</strong> ${sites.reduce((sum, site) => sum + (site.postes?.length || 0), 0)}</p>
+                    <p><strong>Produits:</strong> ${sites.reduce((sum, site) =>
+                        sum + site.postes.reduce((pSum, poste) => pSum + (poste.produits?.length || 0), 0), 0)}</p>
+                </div>
+                <p class="mt-4 text-sm text-gray-600">Voulez-vous soumettre cette demande ?</p>
+            `,
+            showCancelButton: true,
+            confirmButtonColor: '#26658C',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Oui, soumettre',
+            cancelButtonText: 'Annuler'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // 🔥 Préparer les données pour l'envoi
+                const submissionData = {
+                    ...data,
+                    sites: sites,
+                    contact_nom_demande: data.nom_prenom,
+                    contact_email_demande: data.email,
+                    contact_tel_demande: data.telephone
+                };
+
+                // 🔥 FIX: Rafraîchir le token CSRF avant soumission
+                const csrfToken = getFreshCsrfToken();
+                axios.defaults.headers.common['X-CSRF-TOKEN'] = csrfToken;
+
+                console.log('📤 Soumission demande:', {
+                    matrice_id: submissionData.matrice_id,
+                    sites_count: submissionData.sites?.length,
+                    entreprise: submissionData.nom
                 });
-                reset();
-            },
-            onError: (errors) => {
-                console.log('Erreurs de soumission:', errors);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Erreur',
-                    text: 'Erreur lors de la soumission. Vérifiez les données.',
-                    confirmButtonColor: '#26658C'
+
+                axios.post(route('demandes.store'), submissionData)
+                .then(response => {
+                    // Nettoyer tous les brouillons
+                    localStorage.removeItem('demande_draft');
+                    localStorage.removeItem(`demande_draft_${matrice_id}`);
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Demande soumise!',
+                        text: 'Votre demande a été enregistrée avec succès.',
+                        confirmButtonColor: '#26658C',
+                        timer: 2000,
+                        showConfirmButton: false
+                    }).then(() => {
+                        // Rediriger vers le dashboard après succès
+                        window.location.href = route('user.dashboard');
+                    });
+                })
+                .catch(error => {
+                    console.error('Erreurs de soumission:', error);
+
+                    const errors = error.response?.data?.errors || {};
+                    const errorMessage = error.response?.data?.message || 'Une erreur est survenue';
+
+                    // 🔥 Afficher les erreurs de manière détaillée
+                    const errorMessages = Object.keys(errors).map(key => {
+                        return `<li><strong>${key}:</strong> ${errors[key]}</li>`;
+                    }).join('');
+
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Erreur de soumission',
+                        html: errorMessages.length > 0
+                            ? `<ul style="list-style: disc; text-align: left; padding-left: 20px;">${errorMessages}</ul>`
+                            : errorMessage,
+                        confirmButtonColor: '#26658C',
+                        width: '600px'
+                    });
+
+                    // Si erreur 419, sauvegarder localement
+                    if (error.response?.status === 419) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Session expirée',
+                            text: 'Votre session a expiré. Sauvegarde locale en cours...',
+                            confirmButtonColor: '#26658C',
+                            timer: 2000
+                        }).then(() => {
+                            handleSaveDraft();
+                        });
+                    }
                 });
             }
         });
     };
 
     const addSite = () => {
-        const newSites = [...sites, { 
-            nom_site: '', 
+        const newSites = [...sites, {
+            nom_site: '',
             ville_id: '',
             code_site: '',
             postes: [{
-                nom_poste: '', 
-                zone_activite: '', 
-                personnes_exposees: '', 
+                nom_poste: '',
+                zone_activite: '',
+                personnes_exposees: '',
                 duree_shift: '',
                 duree_exposition_quotidienne: '',
                 nb_shifts: '',
@@ -566,14 +591,14 @@ useEffect(() => {
     return (
         <AuthenticatedLayout user={auth.user} noWrapper>
             <Head title="Nouvelle Demande d'Analyse" />
-            
+
             <div className="min-vh-100 bg-gray-50 pb-8">
                 <div className="max-w-3xl mx-auto px-3 py-4">
                     <div className="bg-white rounded shadow p-4">
                         <div className="text-center mb-4">
                             <h1 className="text-xl font-bold text-[#26658C]">Nouvelle Demande d'Analyse</h1>
                         </div>
-                        
+
                         <div className="flex mb-4">
                             <div className={`flex-1 text-center py-2 ${currentStep >= 1 ? 'bg-[#26658C] text-white' : 'bg-gray-200'}`}>
                                 <span className="font-medium text-xs">Informations entreprise</span>
@@ -585,7 +610,7 @@ useEffect(() => {
                                 <span className="font-medium text-xs">Postes de travail</span>
                             </div>
                         </div>
-                        
+
                         <form onSubmit={handleSubmit}>
                             {currentStep === 1 && (
                                 <div className="space-y-4">
@@ -593,7 +618,7 @@ useEffect(() => {
                                         <h3 className="text-lg font-semibold text-[#26658C] mb-1">Informations de l'entreprise</h3>
                                         <div className="w-16 h-1 bg-[#26658C] mx-auto rounded"></div>
                                     </div>
-                                    
+
                                     {matrice && (
                                         <div className="bg-blue-50 p-3 rounded border border-blue-200">
                                             <p className="text-sm text-blue-700 font-medium">
@@ -601,13 +626,13 @@ useEffect(() => {
                                             </p>
                                         </div>
                                     )}
-                                    
+
                                     <div className="bg-gray-50 rounded p-4 border border-gray-200">
                                         <h4 className="text-md font-medium text-[#26658C] mb-3 flex items-center">
                                             <FaCheck className="mr-2 w-3 h-3" />
                                             Informations de l'entreprise
                                         </h4>
-                                        
+
                                         <div className="space-y-3">
                                             <div className="flex items-center space-x-3">
                                                 <label className="block text-sm font-medium text-gray-700 w-32">
@@ -623,7 +648,7 @@ useEffect(() => {
                                                 />
                                             </div>
                                             {errors.ice && <div className="text-red-500 text-xs mt-1 ml-36">{errors.ice}</div>}
-                                            
+
                                             <div className="flex items-center space-x-3">
                                                 <label className="block text-sm font-medium text-gray-700 w-32">
                                                     Raison sociale <span className="text-red-500">*</span>
@@ -638,7 +663,7 @@ useEffect(() => {
                                                 />
                                             </div>
                                             {errors.nom && <div className="text-red-500 text-xs mt-1 ml-36">{errors.nom}</div>}
-                                            
+
                                             <div className="flex items-center space-x-3">
                                                 <label className="block text-sm font-medium text-gray-700 w-32">
                                                     Adresse <span className="text-red-500">*</span>
@@ -653,7 +678,7 @@ useEffect(() => {
                                                 />
                                             </div>
                                             {errors.adresse && <div className="text-red-500 text-xs mt-1 ml-36">{errors.adresse}</div>}
-                                            
+
                                             <div className="flex items-center space-x-3">
                                                 <label className="block text-sm font-medium text-gray-700 w-32">
                                                     Nom et prénom <span className="text-red-500">*</span>
@@ -668,7 +693,7 @@ useEffect(() => {
                                                 />
                                             </div>
                                             {errors.nom_prenom && <div className="text-red-500 text-xs mt-1 ml-36">{errors.nom_prenom}</div>}
-                                            
+
                                             <div className="flex items-center space-x-3">
                                                 <label className="block text-sm font-medium text-gray-700 w-32">
                                                     Fonction <span className="text-red-500">*</span>
@@ -683,7 +708,7 @@ useEffect(() => {
                                                 />
                                             </div>
                                             {errors.contact_fonction && <div className="text-red-500 text-xs mt-1 ml-36">{errors.contact_fonction}</div>}
-                                            
+
                                             <div className="flex items-center space-x-3">
                                                 <label className="block text-sm font-medium text-gray-700 w-32">
                                                     Téléphone <span className="text-red-500">*</span>
@@ -698,7 +723,7 @@ useEffect(() => {
                                                 />
                                             </div>
                                             {errors.telephone && <div className="text-red-500 text-xs mt-1 ml-36">{errors.telephone}</div>}
-                                            
+
                                             <div className="flex items-center space-x-3">
                                                 <label className="block text-sm font-medium text-gray-700 w-32">
                                                     Email <span className="text-red-500">*</span>
@@ -715,7 +740,7 @@ useEffect(() => {
                                             {errors.email && <div className="text-red-500 text-xs mt-1 ml-36">{errors.email}</div>}
                                         </div>
                                     </div>
-                                    
+
                                     <div className="flex justify-between pt-2">
                                         <button
                                             type="button"
@@ -736,14 +761,14 @@ useEffect(() => {
                                     </div>
                                 </div>
                             )}
-                            
+
                             {currentStep === 2 && (
                                 <div className="space-y-4">
                                     <div className="text-center">
                                         <h3 className="text-lg font-semibold text-[#26658C] mb-1">Site d'intervention</h3>
                                         <div className="w-16 h-1 bg-[#26658C] mx-auto rounded"></div>
                                     </div>
-                                    
+
                                     {sites.map((site, index) => (
                                         <div key={index} className="bg-gray-50 rounded p-4 border border-gray-200">
                                             <div className="flex justify-between items-center mb-4">
@@ -761,7 +786,7 @@ useEffect(() => {
                                                     </button>
                                                 )}
                                             </div>
-                                            
+
                                             <div className="space-y-3">
                                                 <div className="flex items-center space-x-3">
                                                     <label className="block text-sm font-medium text-gray-700 w-32">
@@ -776,7 +801,7 @@ useEffect(() => {
                                                         required
                                                     />
                                                 </div>
-                                                
+
                                                 <div className="flex items-center space-x-3">
                                                     <label className="block text-sm font-medium text-gray-700 w-32">
                                                         Ville <span className="text-red-500">*</span>
@@ -791,7 +816,7 @@ useEffect(() => {
                                                         <option value="">{loadingVilles ? 'Chargement...' : 'Sélectionner une ville'}</option>
                                                         {villes.map(ville => (
                                                             <option key={ville.id} value={ville.id}>
-                                                                {ville.nom} 
+                                                                {ville.nom}
                                                             </option>
                                                         ))}
                                                     </select>
@@ -799,7 +824,7 @@ useEffect(() => {
                                                 {loadingVilles && (
                                                     <div className="text-xs text-gray-500 mt-1 ml-36">Chargement des villes...</div>
                                                 )}
-                                                
+
                                                 <div className="flex items-center space-x-3">
                                                     <label className="block text-sm font-medium text-gray-700 w-32">
                                                        Nom de site
@@ -818,7 +843,7 @@ useEffect(() => {
                                             </div>
                                         </div>
                                     ))}
-                                    
+
                                     <div className="flex justify-start pt-2">
                                         <button
                                             type="button"
@@ -829,7 +854,7 @@ useEffect(() => {
                                             <span>Ajouter un site</span>
                                         </button>
                                     </div>
-                                    
+
                                     <div className="flex justify-between pt-4">
                                         <button
                                             type="button"
@@ -860,14 +885,14 @@ useEffect(() => {
                                     </div>
                                 </div>
                             )}
-                            
+
                             {currentStep === 3 && (
                                 <div className="space-y-4">
                                     <div className="text-center">
                                         <h3 className="text-lg font-semibold text-[#26658C] mb-1">Postes de travail par site</h3>
                                         <div className="w-16 h-1 bg-[#26658C] mx-auto rounded"></div>
                                     </div>
-                                    
+
                                     {sites.map((site, siteIndex) => (
                                         <div key={siteIndex} className="bg-gray-50 rounded p-4 border border-gray-200">
                                             <div className="flex justify-between items-center mb-4">
@@ -879,7 +904,7 @@ useEffect(() => {
                                                     {site.postes.length} poste(s)
                                                 </span>
                                             </div>
-                                            
+
                                             {site.postes.map((poste, posteIndex) => (
                                                 <div key={posteIndex} className="bg-white rounded p-3 border border-gray-200 mb-3">
                                                     <div className="flex justify-between items-center mb-3">
@@ -896,7 +921,7 @@ useEffect(() => {
                                                             </button>
                                                         )}
                                                     </div>
-                                                    
+
                                                     <div className="space-y-3">
                                                         <div className="flex items-center space-x-3">
                                                             <label className="block text-sm font-medium text-gray-700 w-32">
@@ -911,7 +936,7 @@ useEffect(() => {
                                                                 required
                                                             />
                                                         </div>
-                                                        
+
                                                         <div className="flex items-center space-x-3">
                                                             <label className="block text-sm font-medium text-gray-700 w-32">
                                                                 Zone/atelier <span className="text-red-500">*</span>
@@ -925,7 +950,7 @@ useEffect(() => {
                                                                 required
                                                             />
                                                         </div>
-                                                        
+
                                                         <div className="border border-gray-300 rounded p-3 bg-gray-50">
                                                             <h6 className="text-xs font-medium text-gray-700 mb-2">Informations complémentaires (optionnelles)</h6>
                                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -945,7 +970,7 @@ useEffect(() => {
                                                                         placeholder="Nombre"
                                                                     />
                                                                 </div>
-                                                                
+
                                                                 <div className="flex items-center space-x-3">
                                                                     <label className="block text-xs font-medium text-gray-700 w-28">
                                                                         Durée du shift
@@ -963,7 +988,7 @@ useEffect(() => {
                                                                         placeholder="Heures"
                                                                     />
                                                                 </div>
-                                                                
+
                                                                 <div className="flex items-center space-x-3">
                                                                     <label className="block text-xs font-medium text-gray-700 w-28">
                                                                         Durée exposition
@@ -983,7 +1008,7 @@ useEffect(() => {
                                                                         title="Utilisez des décimales: 0.25=15min, 0.5=30min, 0.75=45min"
                                                                     />
                                                                 </div>
-                                                                
+
                                                                 <div className="flex items-center space-x-3">
                                                                     <label className="block text-xs font-medium text-gray-700 w-28">
                                                                         Nombre de shifts
@@ -1004,7 +1029,7 @@ useEffect(() => {
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    
+
                                                     <div className="mt-3">
                                                         <div className="flex justify-between items-center mb-2">
                                                             <h6 className="text-sm font-medium text-[#26658C]">
@@ -1014,7 +1039,7 @@ useEffect(() => {
                                                                 {poste.produits?.length || 0} produit(s)
                                                             </span>
                                                         </div>
-                                                        
+
                                                         {poste.produits?.map((produit, produitIndex) => (
                                                             <div key={produitIndex} className="mb-2 border border-gray-200 rounded">
                                                                 <div className="flex justify-between items-center bg-gray-100 px-2 py-1">
@@ -1032,7 +1057,7 @@ useEffect(() => {
                                                                     )}
                                                                 </div>
                                                                 <div className="p-2">
-                                                                    <ProduitComposants 
+                                                                    <ProduitComposants
                                                                         produit={produit}
                                                                         index={produitIndex}
                                                                         posteIndex={posteIndex}
@@ -1043,7 +1068,7 @@ useEffect(() => {
                                                                 </div>
                                                             </div>
                                                         ))}
-                                                        
+
                                                         <div className="flex justify-start mt-2">
                                                             <button
                                                                 type="button"
@@ -1057,7 +1082,7 @@ useEffect(() => {
                                                     </div>
                                                 </div>
                                             ))}
-                                            
+
                                             <div className="flex justify-start mt-2">
                                                 <button
                                                     type="button"
@@ -1070,7 +1095,7 @@ useEffect(() => {
                                             </div>
                                         </div>
                                     ))}
-                                    
+
                                     <div className="flex justify-between pt-4">
                                         <button
                                             type="button"

@@ -49,6 +49,16 @@ class LoginRequest extends FormRequest
             ]);
         }
 
+        // Vérifier si l'email est vérifié
+        $user = Auth::user();
+        if (is_null($user->email_verified_at)) {
+            Auth::logout();
+
+            throw ValidationException::withMessages([
+                'email' => 'Votre adresse email n\'est pas vérifiée. Veuillez vérifier votre email avec le code envoyé lors de votre inscription.',
+            ]);
+        }
+
         RateLimiter::clear($this->throttleKey());
     }
 

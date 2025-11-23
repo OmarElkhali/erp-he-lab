@@ -9,10 +9,15 @@ return new class extends Migration
     public function up()
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('nom_complet')->nullable()->after('id'); // Un seul champ pour le nom complet
-            $table->string('role')->default('client')->after('password');
-            $table->string('email_verification_code')->nullable()->after('role');
-            $table->timestamp('email_verified_at')->nullable()->after('email_verification_code');
+            if (!Schema::hasColumn('users', 'nom_complet')) {
+                $table->string('nom_complet')->nullable()->after('id');
+            }
+            if (!Schema::hasColumn('users', 'email_verification_code')) {
+                $table->string('email_verification_code')->nullable()->after('role');
+            }
+            if (!Schema::hasColumn('users', 'email_verified_at')) {
+                $table->timestamp('email_verified_at')->nullable()->after('email_verification_code');
+            }
         });
     }
 
