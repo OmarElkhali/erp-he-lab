@@ -137,6 +137,14 @@ class RegisterController extends Controller
         // Marquer l'utilisateur comme vérifié
         $user->update(['email_verified_at' => now()]);
 
+        // 🔥 Envoyer un email de notification à l'administrateur
+        try {
+            $adminEmail = config('mail.from.address'); // Email configuré dans .env (omarelkhali@gmail.com)
+            Mail::to($adminEmail)->send(new \App\Mail\NewUserRegisteredMail($user));
+        } catch (\Exception $e) {
+            \Log::error('Erreur envoi email admin: ' . $e->getMessage());
+        }
+
         // Renvoyer succès
         return response()->json([
             'success' => true,
